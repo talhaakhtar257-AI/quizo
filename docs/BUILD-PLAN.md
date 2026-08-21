@@ -19,7 +19,7 @@ Sequential task list. Work top to bottom. Tick each box as it is finished and te
 | 5 | Design system | ✅ |
 | 6 | Auth (A) | ✅ |
 | 7 | Courses (B) | ✅ |
-| 8 | Content upload (C) | ☐ |
+| 8 | Content upload (C) | ✅ |
 | 9 | AI generation (D) | ☐ |
 | 10 | Manual quiz (E) | ☐ |
 | 11 | Approval + assign (F) | ☐ |
@@ -270,9 +270,9 @@ Then a Generate Questions button.
 List previous uploads for this course with date, first 100 chars, delete.
 ```
 
-- [ ] 🟡 Pasted text saves to `content_uploads`
-- [ ] 🟡 Screenshot → text extracted → my edit is what saves
-- [ ] 🟡 Handwriting fails **gracefully**, no crash
+- [x] 🟡 Pasted text saves to `content_uploads`
+- [x] 🟡 Screenshot → text extracted → my edit is what saves
+- [x] 🟡 Handwriting fails **gracefully**, no crash
 
 ---
 
