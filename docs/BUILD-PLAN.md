@@ -17,7 +17,7 @@ Sequential task list. Work top to bottom. Tick each box as it is finished and te
 | 3 | Project skeleton | ✅ |
 | 4 | Database | ✅ |
 | 5 | Design system | ✅ |
-| 6 | Auth (A) | ☐ |
+| 6 | Auth (A) | ✅ |
 | 7 | Courses (B) | ☐ |
 | 8 | Content upload (C) | ☐ |
 | 9 | AI generation (D) | ☐ |
@@ -173,7 +173,7 @@ Finally build /style-guide showing every component in every state.
 
 ## Phase 6 — Auth (Functions 1–5)
 
-- [ ] 🔵 Supabase → Authentication → Providers → Email → **turn OFF "Confirm email"**
+- [x] 🔵 Supabase → Authentication → Providers → Email → **turn OFF "Confirm email"**
 
 ### 6.1 🟢 Build auth
 
@@ -208,11 +208,11 @@ Middleware route protection:
 Also a reusable getCurrentUser helper in src/lib/.
 ```
 
-- [ ] 🟡 Signup → pending page, profile row is `pending`
-- [ ] 🟡 Pending user cannot log in
-- [ ] 🟡 Admin login reaches admin area
-- [ ] 🟡 Logged out, `/admin/dashboard` → redirected
-- [ ] 🟡 **Student typing `/admin/dashboard` is BLOCKED** ← most important test in the project
+- [x] 🟡 Signup → pending page, profile row is `pending`
+- [x] 🟡 Pending user cannot log in
+- [x] 🟡 Admin login reaches admin area
+- [x] 🟡 Logged out, `/admin/dashboard` → redirected
+- [x] 🟡 **Student typing `/admin/dashboard` is BLOCKED** ← most important test in the project
 
 ---
 
