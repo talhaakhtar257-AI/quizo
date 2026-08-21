@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
-import { ListChecks, Pencil, Search, Trash2 } from "lucide-react";
+import { ListChecks, Pencil, Search, Trash2, UserPlus } from "lucide-react";
 import {
   Badge,
   Button,
@@ -200,6 +200,13 @@ export function QuizzesTable({ rows, courses }: { rows: QuizRow[]; courses: Cour
                     className="flex size-9 items-center justify-center rounded-md text-fg-secondary hover:bg-surface-raised hover:text-fg"
                   >
                     <Pencil className="size-4" />
+                  </Link>
+                  <Link
+                    href={`/admin/quizzes/${row.id}/assign`}
+                    aria-label={`Assign ${row.title}`}
+                    className="flex size-9 items-center justify-center rounded-md text-fg-secondary hover:bg-surface-raised hover:text-fg"
+                  >
+                    <UserPlus className="size-4" />
                   </Link>
                   <button
                     type="button"

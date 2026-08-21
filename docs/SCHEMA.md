@@ -36,6 +36,7 @@ Extends Supabase Auth. Created automatically by trigger on signup.
 | `role` | enum | `admin` \| `user` — default `user` |
 | `status` | enum | `pending` \| `active` \| `rejected` — **default `pending`** |
 | `avatar_url` | text | nullable |
+| `rejection_reason` | text | nullable — optional note an admin leaves when rejecting a signup |
 
 **Trigger required:** on insert into `auth.users`, create a matching `profiles` row with `status = 'pending'`, `role = 'user'`.
 
@@ -241,6 +242,8 @@ Created automatically at submission when `percentage >= quizzes.passing_percent`
 | `certificates` | read own | all |
 
 Insert / update / delete on `courses`, `course_outlines`, `quizzes`, `questions`, `options` is **admin only**.
+
+**`profiles` column guard:** the "update own row" policy above is row-level, not column-level — Postgres RLS can't stop a student from editing their own row's `status`, `role`, or `rejection_reason` columns just because it's *their* row. A `BEFORE UPDATE` trigger (`profiles_prevent_self_privilege_escalation`) closes that gap: it blocks any change to those three columns unless the caller is an admin, but only for requests that arrive as a real logged-in session (`auth.uid()` is set) — direct database access (SQL editor, MCP, migrations) is a different, already-trusted boundary and is left alone.
 
 ---
 

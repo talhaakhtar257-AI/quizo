@@ -27,9 +27,11 @@ const NAV_ITEMS = [
 
 export function AdminShell({
   userName,
+  pendingCount = 0,
   children,
 }: {
   userName: string;
+  pendingCount?: number;
   children: ReactNode;
 }) {
   const pathname = usePathname();
@@ -87,6 +89,11 @@ export function AdminShell({
               >
                 <Icon className="size-5" />
                 {label}
+                {href === "/admin/users" && pendingCount > 0 && (
+                  <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1.5 text-xs font-semibold text-white">
+                    {pendingCount}
+                  </span>
+                )}
               </Link>
             );
           })}

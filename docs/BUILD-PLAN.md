@@ -22,7 +22,7 @@ Sequential task list. Work top to bottom. Tick each box as it is finished and te
 | 8 | Content upload (C) | ✅ |
 | 9 | AI generation (D) | ✅ |
 | 10 | Manual quiz (E) | ✅ |
-| 11 | Approval + assign (F) | ☐ |
+| 11 | Approval + assign (F) | ✅ |
 | 12 | Student dashboard (J) | ☐ |
 | 13 | Quiz engine (K) | ☐ |
 | 14 | Attempt tracking (G) | ☐ |
@@ -446,9 +446,11 @@ Block assignment of an unpublished quiz: "Publish this quiz before assigning."
 Prevent duplicate assignment. Unassign warns if an attempt already started.
 ```
 
-- [ ] 🟡 Approve a real test student → email arrives → they can log in
-- [ ] 🟡 Duplicate assignment blocked
-- [ ] 🟡 Unpublished quiz cannot be assigned
+- [x] 🟡 Approve a real test student → email arrives → they can log in — tested live: signed up a throwaway student, approved from `/admin/users`, and confirmed the Resend email actually sent (`POST /api/send-approval-email 200`, verified with Resend's `delivered@resend.dev` test address). Found and fixed two real bugs along the way: (1) the server action's internal call to the email route was returning 401 because a server-side `fetch()` doesn't automatically carry the browser's session cookie — fixed by forwarding it by hand. (2) Discovered the `profiles` table's Row Level Security let a logged-in user update their *own* `status`/`role`/`rejection_reason` (meant only for self-editing name/avatar) — a real privilege-escalation gap where a pending student could have self-approved. Closed it with a database trigger that blocks non-admins from changing those three columns, scoped to real logged-in sessions only (so admin tools and direct database maintenance still work).
+- [x] 🟡 Duplicate assignment blocked — tested live: assigned a test quiz to a test student, then confirmed the assign page correctly says "Every active student is already assigned to this quiz" and excludes her from the assignable list.
+- [x] 🟡 Unpublished quiz cannot be assigned — the assign page shows "Publish this quiz before assigning" and hides the assignment form when a quiz isn't published; the server action re-checks this too.
+
+Also tested live: bulk approve, reject with a reason, deactivate (active → rejected) and move-to-pending (rejected → pending), the pending-count badge in the sidebar, the quick "Assign quiz" modal from a student's row, and unassign — including the exact wording difference between "hasn't started yet" and "has already started or completed N attempt(s)" (verified by inserting a test attempt row). All test accounts and data cleaned up afterward.
 
 ---
 
