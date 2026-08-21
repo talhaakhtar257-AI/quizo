@@ -38,6 +38,8 @@ yarn-error.log*
 
 # claude code local tool data
 .claude/
+.agents/
+skills-lock.json
 
 # typescript
 *.tsbuildinfo
