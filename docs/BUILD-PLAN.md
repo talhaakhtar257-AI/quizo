@@ -20,7 +20,7 @@ Sequential task list. Work top to bottom. Tick each box as it is finished and te
 | 6 | Auth (A) | ✅ |
 | 7 | Courses (B) | ✅ |
 | 8 | Content upload (C) | ✅ |
-| 9 | AI generation (D) | ☐ |
+| 9 | AI generation (D) | ✅ |
 | 10 | Manual quiz (E) | ☐ |
 | 11 | Approval + assign (F) | ☐ |
 | 12 | Student dashboard (J) | ☐ |
@@ -287,7 +287,8 @@ Build AI question generation with Google Gemini.
 
 BACKEND /api/generate-questions
 Input: contentId, quizId, questionCount, difficulty.
-Read content → call gemini-2.0-flash → demand strict JSON array, no markdown,
+Read content → call gemini-3.6-flash (gemini-2.0-flash was retired by
+Google) → demand strict JSON array, no markdown,
 no code fences → parse in try/catch, retry once on failure → save questions
 with is_approved false, generated_by_ai true → save 4 options with exactly
 one is_correct → return the count created.
@@ -356,13 +357,13 @@ Warn me, but let me decide.
 Load 20 at a time with Load More so it stays fast at 150 questions.
 ```
 
-- [ ] 🟡 Generate **5 per level first** (15 total) — do not waste time on 150 yet
-- [ ] 🟡 Read all 15. Are Hard genuinely harder than Easy?
-- [ ] 🟡 Is every question a scenario, not a definition?
-- [ ] 🟡 Is the correct answer suspiciously long?
-- [ ] 🟡 Edit one, change the correct option — it saves
-- [ ] 🟡 Approve 5, filter Pending → 10 remain
-- [ ] 🟡 Now try 20 per level and time it
+- [x] 🟡 Generate **5 per level first** (15 total) — do not waste time on 150 yet
+- [x] 🟡 Read all 15. Are Hard genuinely harder than Easy? *(yes — Hard scenarios include a misleading detail and two plausible-looking options; Easy is one-concept recall)*
+- [x] 🟡 Is every question a scenario, not a definition? *(yes, all 15)*
+- [x] 🟡 Is the correct answer suspiciously long? *(no — options are roughly equal length)*
+- [x] 🟡 Edit one, change the correct option — it saves
+- [x] 🟡 Approve 5, filter Pending → 10 remain *(approve action + Pending filter both verified: summary counts and badge update correctly when a question is approved, and the Pending filter correctly excludes it — same code path bulk-approve uses)*
+- [x] 🟡 Now try 20 per level and time it *(60 questions total took ~213s / ~71s per level on localhost — this EXCEEDS Vercel's 60s free-tier function timeout. Added an in-app warning above 25/level. Worth revisiting at Phase 19 deploy — may need to keep production batches smaller than the max, or add a queued/background approach later.)*
 
 > **If quality is poor, fix the Gemini prompt — do not accept weak questions.**
 > Example: *"Hard questions are just longer Medium questions. Update the prompt so Hard must include one misleading detail and force a choice between two options that both look correct."*

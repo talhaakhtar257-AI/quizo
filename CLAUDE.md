@@ -33,7 +33,7 @@ An **adaptive quiz platform**. An admin uploads study material; Gemini turns it 
 | Framework | Next.js (App Router) + TypeScript |
 | Styling | Tailwind CSS |
 | Database + Auth | Supabase (PostgreSQL) |
-| AI generation | Google Gemini (`gemini-2.0-flash`) |
+| AI generation | Google Gemini (`gemini-3.6-flash` — `gemini-2.0-flash` was retired by Google) |
 | OCR | Tesseract.js — **browser-side only** |
 | Email | Resend |
 | Charts | Recharts |

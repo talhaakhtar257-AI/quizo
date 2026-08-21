@@ -213,6 +213,13 @@ export function GenerateForm({
           You entered {perLevel}. The system will create {totalQuestions} questions:{" "}
           {perLevel} Easy, {perLevel} Medium, {perLevel} Hard.
         </p>
+        {perLevel > 25 && (
+          <p className="text-sm text-warning">
+            Large batches can take a few minutes per level. On the free hosting
+            tier this may time out — if a level fails, try again with a smaller
+            number.
+          </p>
+        )}
       </div>
 
       <Button onClick={handleGenerate} loading={running} disabled={running}>
