@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { Plus, Settings } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import type { Difficulty } from "@/components/ui";
+import { buttonVariants, type Difficulty } from "@/components/ui";
 import { QuestionsReview, type Summary } from "./QuestionsReview";
 
 function computeSummary(
@@ -52,17 +53,33 @@ export default async function QuizQuestionsPage(
 
   return (
     <div className="space-y-6 p-6 sm:p-8">
-      <div>
-        <Link
-          href={`/admin/courses/${quiz.course_id}`}
-          className="text-sm font-medium text-primary hover:underline"
-        >
-          &larr; Back to course
-        </Link>
-        <h1 className="mt-2 text-3xl font-bold text-fg">{quiz.title}</h1>
-        <p className="mt-1 text-sm text-fg-secondary">
-          Review AI-generated questions before they can appear in a live quiz.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <Link
+            href={`/admin/courses/${quiz.course_id}`}
+            className="text-sm font-medium text-primary hover:underline"
+          >
+            &larr; Back to course
+          </Link>
+          <h1 className="mt-2 text-3xl font-bold text-fg">{quiz.title}</h1>
+          <p className="mt-1 text-sm text-fg-secondary">
+            Review questions before they can appear in a live quiz.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Link
+            href={`/admin/quizzes/${quiz.id}/settings`}
+            className={buttonVariants({ size: "sm", variant: "secondary" })}
+          >
+            <Settings className="size-4" /> Settings
+          </Link>
+          <Link
+            href={`/admin/quizzes/${quiz.id}/questions/new`}
+            className={buttonVariants({ size: "sm" })}
+          >
+            <Plus className="size-4" /> Add question
+          </Link>
+        </div>
       </div>
 
       <QuestionsReview quizId={quiz.id} initialSummary={summary} />

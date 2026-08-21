@@ -21,7 +21,7 @@ Sequential task list. Work top to bottom. Tick each box as it is finished and te
 | 7 | Courses (B) | ✅ |
 | 8 | Content upload (C) | ✅ |
 | 9 | AI generation (D) | ✅ |
-| 10 | Manual quiz (E) | ☐ |
+| 10 | Manual quiz (E) | ✅ |
 | 11 | Approval + assign (F) | ☐ |
 | 12 | Student dashboard (J) | ☐ |
 | 13 | Quiz engine (K) | ☐ |
@@ -404,9 +404,11 @@ Validation: all 4 options filled, exactly one correct, no duplicate option
 text, question at least 10 characters.
 ```
 
-- [ ] 🟡 Publishing with no approved questions is blocked with a clear message
-- [ ] 🟡 Manual question saves and is already approved
-- [ ] 🟡 Two empty options → blocked. Two correct options → impossible
+- [x] 🟡 Publishing with no approved questions is blocked with a clear message — tested live: set a quiz to Easy only, 1 question to show, checked Published with zero approved questions, got "Cannot publish. Easy only mode showing 1 questions needs 1 approved at that level. You have: Easy 0 (need 1 more)." and the quiz was not even created (validated before insert, so no orphaned draft).
+- [x] 🟡 Manual question saves and is already approved — added one manual scenario question through `/admin/quizzes/[id]/questions/new`, it appeared on the review page immediately as Approved, and the quiz could then be published successfully.
+- [x] 🟡 Two empty options → blocked. Two correct options → impossible — empty-options case tested live ("All 4 options must be filled in."); duplicate-option-text is also blocked. Two-correct-options is structurally impossible since only one radio button can be selected at a time.
+
+Also tested live: the quizzes list table (title, course, questions approved/total, timer, passing %, mode, published badge), search + course + published filters, and delete with an impact-count confirmation ("this will permanently delete this quiz, all 1 question(s) in it") that correctly cascades. Verified in both light and dark theme. Tested with a throwaway admin account and course, cleaned up afterwards (confirmed 0 leftover `quizo.test%` accounts).
 
 ---
 

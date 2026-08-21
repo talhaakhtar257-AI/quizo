@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import type { Enums } from "@/types/database";
 
@@ -107,4 +108,52 @@ export async function updateQuestion(questionId: string, input: UpdateQuestionIn
       .eq("id", option.id);
     if (error) throw new Error(error.message);
   }
+}
+
+export interface CreateManualQuestionInput {
+  questionType: Enums<"question_type">;
+  difficulty: Enums<"difficulty_level">;
+  scenarioText: string;
+  questionText: string;
+  explanation: string;
+  options: { text: string; isCorrect: boolean }[];
+}
+
+export async function createManualQuestion(quizId: string, input: CreateManualQuestionInput) {
+  const supabase = await createClient();
+
+  const { data: question, error: questionError } = await supabase
+    .from("questions")
+    .insert({
+      quiz_id: quizId,
+      difficulty: input.difficulty,
+      question_type: input.questionType,
+      scenario_text: input.questionType === "scenario" ? input.scenarioText : null,
+      question_text: input.questionText,
+      explanation: input.explanation,
+      is_approved: true,
+      generated_by_ai: false,
+    })
+    .select("id")
+    .single();
+
+  if (questionError || !question) {
+    throw new Error(questionError?.message ?? "Could not save the question.");
+  }
+
+  const { error: optionsError } = await supabase.from("options").insert(
+    input.options.map((option, index) => ({
+      question_id: question.id,
+      option_text: option.text,
+      is_correct: option.isCorrect,
+      option_order: index + 1,
+    }))
+  );
+
+  if (optionsError) {
+    throw new Error("The question was saved but its options could not be saved.");
+  }
+
+  revalidatePath(`/admin/quizzes/${quizId}/questions`);
+  return question;
 }
