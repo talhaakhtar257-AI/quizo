@@ -360,7 +360,7 @@ export function ContentUploader({ courseId }: { courseId: string }) {
         <div className="mt-6 flex items-center justify-between gap-4 rounded-lg border border-success/30 bg-success-bg p-4">
           <p className="text-sm font-medium text-success">Content saved.</p>
           <Link
-            href={`/admin/courses/${courseId}/quizzes/new?contentId=${savedUploadId}`}
+            href={`/admin/quizzes/generate?courseId=${courseId}&contentId=${savedUploadId}`}
             className={buttonVariants({ size: "sm" })}
           >
             Generate questions

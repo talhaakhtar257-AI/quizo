@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Plus, ListChecks, Upload } from "lucide-react";
+import { Plus, ListChecks, Upload, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { buttonVariants, EmptyState, Badge } from "@/components/ui";
 import { OutlineList } from "./OutlineList";
@@ -69,12 +69,20 @@ export default async function CourseDetailPage(
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-semibold text-fg">Quizzes</h2>
-          <Link
-            href={`/admin/courses/${course.id}/quizzes/new`}
-            className={buttonVariants({ size: "sm" })}
-          >
-            <Plus className="size-4" /> Create quiz
-          </Link>
+          <div className="flex gap-2">
+            <Link
+              href={`/admin/quizzes/generate?courseId=${course.id}`}
+              className={buttonVariants({ size: "sm", variant: "secondary" })}
+            >
+              <Sparkles className="size-4" /> Generate with AI
+            </Link>
+            <Link
+              href={`/admin/quizzes/new?courseId=${course.id}`}
+              className={buttonVariants({ size: "sm" })}
+            >
+              <Plus className="size-4" /> Create quiz
+            </Link>
+          </div>
         </div>
 
         {!quizzes || quizzes.length === 0 ? (
