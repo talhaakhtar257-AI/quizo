@@ -1,26 +1,121 @@
 @import "tailwindcss";
 
+/* Makes Tailwind's dark: variant respond to next-themes' .dark class
+   instead of the OS prefers-color-scheme media query. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Neutral */
+  --background: #F8FAFC;
+  --surface: #FFFFFF;
+  --surface-raised: #F1F5F9;
+  --border: #E2E8F0;
+  --fg: #0F172A;
+  --fg-secondary: #475569;
+  --fg-muted: #94A3B8;
+
+  /* Brand */
+  --primary: #4F46E5;
+  --primary-hover: #4338CA;
+  --primary-subtle: #E0E7FF;
+  --primary-faint: #EEF2FF;
+
+  /* Semantic */
+  --success: #16A34A;
+  --success-bg: #DCFCE7;
+  --warning: #D97706;
+  --warning-bg: #FEF3C7;
+  --danger: #DC2626;
+  --danger-bg: #FEE2E2;
+  --info: #2563EB;
+  --info-bg: #DBEAFE;
+
+  /* Difficulty tint — optional treatment for admin lists only.
+     Never used for the primary DifficultyIndicator component. */
+  --difficulty-easy-bg: #F5F3FF;
+  --difficulty-easy-fg: #7C3AED;
+  --difficulty-medium-bg: #EDE9FE;
+  --difficulty-medium-fg: #6D28D9;
+  --difficulty-hard-bg: #DDD6FE;
+  --difficulty-hard-fg: #4C1D95;
+}
+
+.dark {
+  --background: #0F172A;
+  --surface: #1E293B;
+  --surface-raised: #334155;
+  --border: #334155;
+  --fg: #F1F5F9;
+  --fg-secondary: #CBD5E1;
+  --fg-muted: #94A3B8;
+
+  --primary: #818CF8;
+  --primary-hover: #818CF8;
+  --primary-subtle: color-mix(in srgb, var(--primary) 22%, var(--surface));
+  --primary-faint: color-mix(in srgb, var(--primary) 12%, var(--surface));
+
+  --success: #4ADE80;
+  --success-bg: color-mix(in srgb, var(--success) 18%, var(--surface));
+  --warning: #FBBF24;
+  --warning-bg: color-mix(in srgb, var(--warning) 18%, var(--surface));
+  --danger: #F87171;
+  --danger-bg: color-mix(in srgb, var(--danger) 18%, var(--surface));
+
+  /* The design doc doesn't define dark "info" or dark difficulty-tint
+     colours. Lightened here the same way primary/success/warning/danger
+     were (literal values, since a color can't reference its own
+     not-yet-overridden self via var()). */
+  --info: #60A5FA;
+  --info-bg: color-mix(in srgb, var(--info) 18%, var(--surface));
+
+  --difficulty-easy-fg: #C4B5FD;
+  --difficulty-easy-bg: color-mix(in srgb, var(--difficulty-easy-fg) 15%, var(--surface));
+  --difficulty-medium-fg: #A78BFA;
+  --difficulty-medium-bg: color-mix(in srgb, var(--difficulty-medium-fg) 15%, var(--surface));
+  --difficulty-hard-fg: #8B5CF6;
+  --difficulty-hard-bg: color-mix(in srgb, var(--difficulty-hard-fg) 15%, var(--surface));
 }
 
 @theme inline {
+  --font-sans: var(--font-inter);
+
   --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-border: var(--border);
+  --color-fg: var(--fg);
+  --color-fg-secondary: var(--fg-secondary);
+  --color-fg-muted: var(--fg-muted);
+
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-subtle: var(--primary-subtle);
+  --color-primary-faint: var(--primary-faint);
+
+  --color-success: var(--success);
+  --color-success-bg: var(--success-bg);
+  --color-warning: var(--warning);
+  --color-warning-bg: var(--warning-bg);
+  --color-danger: var(--danger);
+  --color-danger-bg: var(--danger-bg);
+  --color-info: var(--info);
+  --color-info-bg: var(--info-bg);
+
+  --color-difficulty-easy-bg: var(--difficulty-easy-bg);
+  --color-difficulty-easy-fg: var(--difficulty-easy-fg);
+  --color-difficulty-medium-bg: var(--difficulty-medium-bg);
+  --color-difficulty-medium-fg: var(--difficulty-medium-fg);
+  --color-difficulty-hard-bg: var(--difficulty-hard-bg);
+  --color-difficulty-hard-fg: var(--difficulty-hard-fg);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
 }
