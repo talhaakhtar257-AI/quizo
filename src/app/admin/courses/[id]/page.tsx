@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Plus, ListChecks } from "lucide-react";
+import { Plus, ListChecks, Upload } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { buttonVariants, EmptyState, Badge } from "@/components/ui";
 import { OutlineList } from "./OutlineList";
@@ -31,6 +31,11 @@ export default async function CourseDetailPage(
     .eq("course_id", id)
     .order("created_at", { ascending: false });
 
+  const { count: uploadCount } = await supabase
+    .from("content_uploads")
+    .select("id", { count: "exact", head: true })
+    .eq("course_id", id);
+
   return (
     <div className="space-y-8 p-6 sm:p-8">
       <div>
@@ -43,6 +48,22 @@ export default async function CourseDetailPage(
       <section className="space-y-4">
         <h2 className="text-2xl font-semibold text-fg">Outline</h2>
         <OutlineList courseId={course.id} topics={topics ?? []} />
+      </section>
+
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-semibold text-fg">Content</h2>
+          <Link
+            href={`/admin/courses/${course.id}/upload-content`}
+            className={buttonVariants({ size: "sm", variant: "secondary" })}
+          >
+            <Upload className="size-4" /> Upload content
+          </Link>
+        </div>
+        <p className="text-sm text-fg-secondary">
+          {uploadCount ?? 0} upload{uploadCount === 1 ? "" : "s"} saved for this
+          course.
+        </p>
       </section>
 
       <section className="space-y-4">
