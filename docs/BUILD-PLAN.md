@@ -23,7 +23,7 @@ Sequential task list. Work top to bottom. Tick each box as it is finished and te
 | 9 | AI generation (D) | ✅ |
 | 10 | Manual quiz (E) | ✅ |
 | 11 | Approval + assign (F) | ✅ |
-| 12 | Student dashboard (J) | ☐ |
+| 12 | Student dashboard (J) | ✅ |
 | 13 | Quiz engine (K) | ☐ |
 | 14 | Attempt tracking (G) | ☐ |
 | 15 | Analytics (H) | ☐ |
@@ -486,9 +486,11 @@ SECURITY: a student sees only their own data. Changing an id in the URL must
 never load another student's attempt.
 ```
 
-- [ ] 🟡 Assigned quiz appears
-- [ ] 🟡 Chart hidden with a friendly message when there is no data
-- [ ] 🟡 Changing an attempt id in the URL is blocked
+- [x] 🟡 Assigned quiz appears — tested live with a throwaway student assigned 3 quizzes in different states (not started, in progress, attempts exhausted). All three rendered correctly on both `/dashboard` and `/quizzes`, including the amber "deadline soon" and red "Overdue" badges, the highlighted "Resume Quiz" button, and the disabled "No attempts left. Best score: X%." state.
+- [x] 🟡 Chart hidden with a friendly message when there is no data — confirmed the "Complete more quizzes to see your progress" message shows under 2 submitted attempts; with 2 real submitted attempts (55% then 85%) the recharts line chart rendered correctly with a dashed passing-percentage reference line, in both light and dark theme.
+- [ ] 🟡 Changing an attempt id in the URL is blocked — **not yet testable.** None of the three pages built in this phase (`/dashboard`, `/quizzes`, `/history`) take an id from the URL; they all read the logged-in student's own session only, so there's nothing to tamper with yet. This check is really about the future `/quiz/[id]/result` page (Phase 13/14), which doesn't exist yet — this box should be re-verified once that page is built.
+
+Also fixed a real security gap found while building this: the `/history` page was **not protected** by the login-wall middleware — only `/dashboard` and `/quiz*` were listed, so `/history` would have been reachable by a logged-out visitor once real data existed. Added it to the protected-routes check and confirmed live that a logged-out visit to `/history` now redirects to `/login`. Also moved the dashboard out of its old placeholder location into a shared `(user)` layout with the new top nav, and verified the AI-generated dashboard/quizzes/history pages all correctly show only the signed-in student's own data (enforced by Row Level Security, not just the page code).
 
 ---
 
