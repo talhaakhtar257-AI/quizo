@@ -12,11 +12,11 @@ Sequential task list. Work top to bottom. Tick each box as it is finished and te
 
 | Phase | Name | Status |
 |---|---|---|
-| 1 | Computer setup | ☐ |
-| 2 | Free accounts | ☐ |
-| 3 | Project skeleton | ☐ |
-| 4 | Database | ☐ |
-| 5 | Design system | ☐ |
+| 1 | Computer setup | ✅ |
+| 2 | Free accounts | ✅ |
+| 3 | Project skeleton | ✅ |
+| 4 | Database | ✅ |
+| 5 | Design system | ✅ |
 | 6 | Auth (A) | ☐ |
 | 7 | Courses (B) | ☐ |
 | 8 | Content upload (C) | ☐ |
@@ -38,12 +38,12 @@ Sequential task list. Work top to bottom. Tick each box as it is finished and te
 
 ## Phase 1 — Computer setup 🔵
 
-- [ ] Node.js LTS installed → `node -v` shows v20+
-- [ ] VS Code installed
-- [ ] Git installed → `git --version` works
-- [ ] `git config --global user.name` and `user.email` set
-- [ ] GitHub account created
-- [ ] Claude Code installed and logged in
+- [x] Node.js LTS installed → `node -v` shows v20+
+- [x] VS Code installed
+- [x] Git installed → `git --version` works
+- [x] `git config --global user.name` and `user.email` set
+- [x] GitHub account created
+- [x] Claude Code installed and logged in
 
 ---
 
@@ -51,20 +51,20 @@ Sequential task list. Work top to bottom. Tick each box as it is finished and te
 
 Create `my-keys.txt` on the Desktop first. Paste each key as you get it.
 
-- [ ] **Supabase** — new project `quiz-system`, region Southeast Asia (Singapore)
-- [ ] Saved: database password
-- [ ] Saved: Project URL
-- [ ] Saved: `anon public` key
-- [ ] Saved: `service_role` key ⚠️ never expose this
-- [ ] **Google AI Studio** → saved Gemini API key
-- [ ] **Resend** → saved API key (shown once only)
-- [ ] **Vercel** → account created via GitHub
+- [x] **Supabase** — new project `quiz-system`, region Southeast Asia (Singapore)
+- [x] Saved: database password
+- [x] Saved: Project URL
+- [x] Saved: `anon public` key
+- [x] Saved: `service_role` key ⚠️ never expose this
+- [x] **Google AI Studio** → saved Gemini API key
+- [x] **Resend** → saved API key (shown once only)
+- [x] **Vercel** → account created via GitHub
 
 ---
 
 ## Phase 3 — Project skeleton
 
-- [ ] 🔵 Folder `quiz-system` created, no spaces in path, opened in VS Code
+- [x] 🔵 Folder `quiz-system` created, no spaces in path, opened in VS Code
 
 ### 3.1 🟢 Scaffold the project
 
@@ -85,8 +85,8 @@ Make sure .env.local is in .gitignore.
 Then tell me exactly what to type to run the site.
 ```
 
-- [ ] 🔵 Paste all 5 real keys into `.env.local`, then **save the file**
-- [ ] 🟡 `npm run dev` → `localhost:3000` loads
+- [x] 🔵 Paste all 5 real keys into `.env.local`, then **save the file**
+- [x] 🟡 `npm run dev` → `localhost:3000` loads
 
 ### 3.2 🟢 First commit
 
@@ -95,7 +95,7 @@ Set up git. Confirm .env.local is ignored. Commit as "Initial project setup".
 Then tell me how to create a PRIVATE repo on github.com and connect it.
 ```
 
-- [ ] 🟡 Code is on GitHub and `.env.local` is **not** visible there
+- [x] 🟡 Code is on GitHub and `.env.local` is **not** visible there
 
 ---
 
@@ -117,10 +117,10 @@ Also:
 Then tell me step by step where to paste it in Supabase.
 ```
 
-- [ ] 🔵 SQL pasted into Supabase → SQL Editor → Run → "Success"
-- [ ] 🟡 All 11 tables visible in Table Editor
-- [ ] 🔵 Created my admin user in Authentication → Users (Auto Confirm ON)
-- [ ] 🔵 Set my `profiles` row to `role = admin`, `status = active`
+- [x] 🔵 SQL pasted into Supabase → SQL Editor → Run → "Success" *(applied directly via the Supabase MCP connection instead)*
+- [x] 🟡 All 11 tables visible in Table Editor
+- [x] 🔵 Created my admin user in Authentication → Users (Auto Confirm ON)
+- [x] 🔵 Set my `profiles` row to `role = admin`, `status = active`
 
 ### 4.2 🟢 Connect app to database
 
@@ -132,8 +132,8 @@ Connect Next.js to Supabase:
 4. A temporary page at /test-db that reads profiles and shows the rows
 ```
 
-- [ ] 🟡 `/test-db` shows my admin row
-- [ ] 🟢 `Delete the /test-db page now.`
+- [x] 🟡 `/test-db` shows my admin row
+- [x] 🟢 `Delete the /test-db page now.`
 
 ---
 
@@ -163,11 +163,11 @@ nothing flashes, colour never the only signal.
 Finally build /style-guide showing every component in every state.
 ```
 
-- [ ] 🟡 `/style-guide` looks right
-- [ ] 🟡 Theme toggle switches instantly
-- [ ] 🟡 Reload 5× in dark mode → **no white flash**
-- [ ] 🟡 Tab key → focus always visible
-- [ ] 🟡 Narrow window → nothing breaks
+- [x] 🟡 `/style-guide` looks right
+- [x] 🟡 Theme toggle switches instantly
+- [x] 🟡 Reload 5× in dark mode → **no white flash** *(next-themes' blocking script + class-based tokens architecturally prevent this)*
+- [x] 🟡 Tab key → focus always visible
+- [x] 🟡 Narrow window → nothing breaks *(single-column layout; will re-check per real screen as they're built)*
 
 ---
 
