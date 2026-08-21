@@ -18,7 +18,7 @@ Sequential task list. Work top to bottom. Tick each box as it is finished and te
 | 4 | Database | ✅ |
 | 5 | Design system | ✅ |
 | 6 | Auth (A) | ✅ |
-| 7 | Courses (B) | ☐ |
+| 7 | Courses (B) | ✅ |
 | 8 | Content upload (C) | ☐ |
 | 9 | AI generation (D) | ☐ |
 | 10 | Manual quiz (E) | ☐ |
@@ -241,8 +241,8 @@ the quizzes in this course with a Create Quiz button.
 Admin only.
 ```
 
-- [ ] 🟡 Create a course, add 3 topics, reorder one, refresh — order persists
-- [ ] 🟡 Delete shows confirmation first
+- [x] 🟡 Create a course, add 3 topics, reorder one, refresh — order persists
+- [x] 🟡 Delete shows confirmation first
 
 ---
 
