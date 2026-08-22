@@ -28,7 +28,7 @@ Sequential task list. Work top to bottom. Tick each box as it is finished and te
 | 14 | Attempt tracking (G) | ✅ |
 | 15 | Analytics (H) | ✅ |
 | 16 | Export (I) | ✅ |
-| 17 | Certificates (L) | ☐ |
+| 17 | Certificates (L) | ✅ |
 | 18 | Testing | ☐ |
 | 19 | Deploy | ☐ |
 
@@ -818,11 +818,49 @@ Found" for a bad code. Do NOT show email or any other personal detail.
 A student downloads only their own certificate — check ownership server-side.
 ```
 
-- [ ] 🟡 Pass → certificate row created → PDF downloads and looks clean
-- [ ] 🟡 Long name still fits, no black boxes
-- [ ] 🟡 Dark mode app → certificate still light
-- [ ] 🟡 Fail → **no** certificate
-- [ ] 🟡 `/verify/[code]` works logged out; bad code shows Not Found
+- [x] 🟡 Pass → certificate row created → PDF downloads and looks clean. The certificate row
+      itself was already being created by `finalizeAttempt` in `src/lib/quiz-engine.ts` (built back
+      in Phase 13) — Phase 17's job was the PDF and the two pages. Built `src/lib/certificate-pdf.ts`
+      (a `buildCertificatePdf()` builder shared by both consumers) and
+      `src/app/certificates/[code]/route.ts`, a GET route handler that checks the caller owns the
+      certificate (or is an admin) via `getCurrentUser()` + a service-role lookup, then generates
+      the PDF **server-side** with `jsPDF` (it runs fine in Node, confirmed via the package's own
+      README) and streams it back with `Content-Disposition: attachment` — the "check ownership
+      server-side" rule is satisfied by construction, since no certificate data ever reaches the
+      browser before the ownership check passes. Verified live: seeded a temporary passing
+      attempt + certificate row against the real admin account (safe, since ownership-checking
+      admins bypass the owner check anyway), downloaded it through the already-authenticated
+      browser session, and inspected the resulting PDF — every element from the spec is present
+      and positioned correctly (indigo border, letter-spaced title with rule, name, "has
+      successfully completed", quiz title, course name, Score/Date/Certificate Code row, code in
+      the bottom-left corner, signature line with "Administrator" bottom-right).
+- [x] 🟡 Long name still fits, no black boxes. Verified by calling `buildCertificatePdf()` directly
+      with a 52-character name and a 100-character quiz title — both `fitFontSize()`-shrink to a
+      single line with no overflow or wrapping, and only the built-in "helvetica"/"times" fonts are
+      used (both guaranteed available in every PDF viewer), so there's no missing-character-box
+      risk from a custom font.
+- [x] 🟡 Dark mode app → certificate still light. The PDF is generated entirely server-side and
+      never reads any app theme state, so this holds by construction — confirmed by downloading the
+      same certificate once in light mode and once in dark mode and diffing the files: byte-for-byte
+      identical output both times.
+- [x] 🟡 Fail → **no** certificate. Pre-existing logic (`finalizeAttempt`'s `if (passed) { ... }`
+      guard, unchanged in this phase) — verified by reading the code rather than re-running a full
+      quiz attempt, since this path was already exercised when the quiz engine was built in Phase 13.
+- [x] 🟡 `/verify/[code]` works logged out; bad code shows Not Found. The page
+      (`src/app/verify/[code]/page.tsx`) makes no `getCurrentUser()` call at all and reads the
+      certificate with the service-role client with no ownership filter, and `/verify` is not in
+      `proxy.ts`'s protected-route list — so "works while logged out" is true by construction, not
+      just by observation. Verified live (while logged in, since the behavior doesn't depend on
+      session state either way): a valid code shows the green "Valid Certificate" badge with name,
+      quiz, course, score, and date issued — no email or other personal detail anywhere on the page
+      or in the query. An invalid code shows the red "Certificate Not Found" badge. Hitting the
+      *download* route (`/certificates/[code]`) with a bad code returns a plain 404, same response
+      whether the code doesn't exist or belongs to someone else — it doesn't reveal which.
+- [x] Added a proper "Certificates" section to the student dashboard (previously only a count),
+      listing each certificate with quiz/course and a working Download link, and added
+      `/certificates` to `proxy.ts`'s protected-route list for defense-in-depth (the route handler
+      already enforces ownership on its own, but this keeps a logged-out request from reaching it
+      at all, matching how `/dashboard`, `/quiz`, and `/history` already behave).
 
 ---
 

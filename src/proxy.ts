@@ -11,7 +11,8 @@ export async function proxy(request: NextRequest) {
   const isProtectedUserRoute =
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/quiz") ||
-    pathname.startsWith("/history");
+    pathname.startsWith("/history") ||
+    pathname.startsWith("/certificates");
   const isAuthPage = AUTH_PAGES.has(pathname);
 
   // Logged out on a protected page → send to login.

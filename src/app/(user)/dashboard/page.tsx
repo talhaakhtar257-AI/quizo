@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Award, CheckCircle2, ClipboardList, TrendingUp } from "lucide-react";
+import { Award, CheckCircle2, ClipboardList, Download, TrendingUp } from "lucide-react";
 import { getCurrentUser } from "@/lib/get-current-user";
 import { createClient } from "@/lib/supabase/server";
 import { Badge, Card, EmptyState, buttonVariants } from "@/components/ui";
@@ -28,6 +28,11 @@ export default async function DashboardPage() {
   const { count: certificateCount } = await supabase
     .from("certificates")
     .select("id", { count: "exact", head: true });
+
+  const { data: certificates } = await supabase
+    .from("certificates")
+    .select("certificate_code, issued_at, attempts(quizzes(title, courses(title)))")
+    .order("issued_at", { ascending: false });
 
   const attemptsByQuiz = new Map<string, AttemptSummary[]>();
   for (const attempt of attempts ?? []) {
@@ -177,6 +182,45 @@ export default async function DashboardPage() {
                       View
                     </Link>
                   </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-lg font-semibold text-fg">Certificates</h2>
+        {!certificates || certificates.length === 0 ? (
+          <EmptyState
+            icon={<Award className="size-10" />}
+            title="No certificates yet"
+            description="Pass a quiz to earn your first certificate."
+          />
+        ) : (
+          <div className="overflow-hidden rounded-lg border border-border bg-surface">
+            <ul className="divide-y divide-border">
+              {certificates.map((certificate) => (
+                <li
+                  key={certificate.certificate_code}
+                  className="flex items-center justify-between gap-3 px-4 py-3"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-fg">
+                      {certificate.attempts?.quizzes?.title ?? "Quiz"}
+                    </p>
+                    <p className="text-xs text-fg-muted">
+                      {certificate.attempts?.quizzes?.courses?.title ?? "—"} · Issued{" "}
+                      {formatDate(certificate.issued_at)}
+                    </p>
+                  </div>
+                  <Link
+                    href={`/certificates/${certificate.certificate_code}`}
+                    className={buttonVariants({ size: "sm", variant: "secondary" })}
+                  >
+                    <Download className="size-4" />
+                    Download
+                  </Link>
                 </li>
               ))}
             </ul>
