@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   BookOpen,
   ListChecks,
+  ClipboardCheck,
   Users,
   BarChart3,
   Menu,
@@ -21,6 +22,7 @@ const NAV_ITEMS = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/courses", label: "Courses", icon: BookOpen },
   { href: "/admin/quizzes", label: "Quizzes", icon: ListChecks },
+  { href: "/admin/attempts", label: "Attempts", icon: ClipboardCheck },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/reports", label: "Reports", icon: BarChart3 },
 ];

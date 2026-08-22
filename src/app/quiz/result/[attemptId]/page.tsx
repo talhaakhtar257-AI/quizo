@@ -4,9 +4,9 @@ import { Award, CheckCircle2, Trophy, XCircle } from "lucide-react";
 import { getCurrentUser } from "@/lib/get-current-user";
 import { createServiceClient } from "@/lib/supabase/service";
 import { IneligibleNotice } from "@/components/user/IneligibleNotice";
-import { Card, DifficultyIndicator, buttonVariants } from "@/components/ui";
+import { Card, buttonVariants } from "@/components/ui";
 import { formatDuration } from "@/lib/format";
-import type { Difficulty } from "@/lib/quiz-engine";
+import { QuestionReviewList, type ReviewAnswer } from "@/components/QuestionReviewList";
 import { ExitFullscreenOnMount } from "./ExitFullscreenOnMount";
 
 export default async function QuizResultPage({
@@ -76,6 +76,22 @@ export default async function QuizResultPage({
 
   const passed = attempt.passed ?? false;
 
+  const reviewAnswers: ReviewAnswer[] = (answers ?? []).map((answer) => ({
+    id: answer.id,
+    questionOrder: answer.question_order,
+    isCorrect: answer.is_correct,
+    difficultyAtTime: answer.difficulty_at_time,
+    selectedOptionId: answer.selected_option_id,
+    scenarioText: answer.questions?.scenario_text ?? null,
+    questionText: answer.questions?.question_text ?? "",
+    explanation: answer.questions?.explanation ?? null,
+    options: (optionsByQuestion.get(answer.question_id) ?? []).map((option) => ({
+      id: option.id,
+      optionText: option.option_text,
+      isCorrect: option.is_correct,
+    })),
+  }));
+
   return (
     <div className="mx-auto min-h-screen max-w-2xl space-y-6 p-4 sm:p-6">
       <ExitFullscreenOnMount />
@@ -124,81 +140,7 @@ export default async function QuizResultPage({
 
       <div className="space-y-4">
         <h2 className="text-lg font-semibold text-fg">Question Review</h2>
-        {(answers ?? []).map((answer) => {
-          const options = optionsByQuestion.get(answer.question_id) ?? [];
-          const correctOption = options.find((option) => option.is_correct);
-          const selectedOption = options.find((option) => option.id === answer.selected_option_id);
-
-          return (
-            <Card key={answer.id} className="space-y-3 p-5">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <span
-                    className={
-                      "flex size-6 shrink-0 items-center justify-center rounded-full " +
-                      (answer.is_correct ? "bg-success-bg text-success" : "bg-danger-bg text-danger")
-                    }
-                  >
-                    {answer.is_correct ? (
-                      <CheckCircle2 className="size-4" />
-                    ) : (
-                      <XCircle className="size-4" />
-                    )}
-                  </span>
-                  <span className="text-sm font-medium text-fg-muted">Q{answer.question_order}</span>
-                </div>
-                <DifficultyIndicator difficulty={answer.difficulty_at_time as Difficulty} />
-              </div>
-
-              {answer.questions?.scenario_text && (
-                <p className="rounded-md bg-info-bg p-3 text-sm leading-relaxed text-fg">
-                  {answer.questions.scenario_text}
-                </p>
-              )}
-
-              <p className="font-medium text-fg">{answer.questions?.question_text}</p>
-
-              <div className="space-y-1.5 text-sm">
-                {options.map((option) => {
-                  const isSelected = option.id === answer.selected_option_id;
-                  const isCorrect = option.is_correct;
-                  return (
-                    <div
-                      key={option.id}
-                      className={
-                        "rounded-md border px-3 py-2 " +
-                        (isCorrect
-                          ? "border-success bg-success-bg text-success"
-                          : isSelected
-                            ? "border-danger bg-danger-bg text-danger"
-                            : "border-border text-fg-secondary")
-                      }
-                    >
-                      {option.option_text}
-                      {isSelected && !isCorrect && " (your answer)"}
-                      {isCorrect && " (correct answer)"}
-                    </div>
-                  );
-                })}
-                {!selectedOption && (
-                  <p className="text-xs text-fg-muted">No answer was selected for this question.</p>
-                )}
-              </div>
-
-              {answer.questions?.explanation && (
-                <p className="text-sm text-fg-secondary">
-                  <span className="font-medium text-fg">Why: </span>
-                  {answer.questions.explanation}
-                </p>
-              )}
-            </Card>
-          );
-        })}
-        {(!answers || answers.length === 0) && (
-          <Card className="p-5 text-center text-sm text-fg-secondary">
-            No questions were answered in this attempt.
-          </Card>
-        )}
+        <QuestionReviewList answers={reviewAnswers} />
       </div>
     </div>
   );

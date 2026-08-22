@@ -25,7 +25,7 @@ Sequential task list. Work top to bottom. Tick each box as it is finished and te
 | 11 | Approval + assign (F) | ✅ |
 | 12 | Student dashboard (J) | ✅ |
 | 13 | Quiz engine (K) | ✅ |
-| 14 | Attempt tracking (G) | ☐ |
+| 14 | Attempt tracking (G) | ✅ |
 | 15 | Analytics (H) | ☐ |
 | 16 | Export (I) | ☐ |
 | 17 | Certificates (L) | ☐ |
@@ -654,6 +654,14 @@ order with difficulty at that moment, chosen option, correct option, result.
 
 Admins see any attempt. Students see only their own.
 ```
+
+- [x] 🟡 `/admin/attempts` table with all 9 columns, all 4 filters (quiz, student, result, date range) and clickable sortable headers — built and tested live with 8 seeded attempts across 2 students, 2 quizzes, and every result state (Pass, Fail, In Progress, Abandoned, and the rare `expired` status). Filtering by Result → "Abandoned" correctly isolated only the one stale row. Clicking the `%` header sorted ascending then descending correctly, with in-progress rows (no percentage yet) sorting to one end.
+- [x] 🟡 In-progress amber badge + "started X min ago" — confirmed live: an attempt started ~15 minutes earlier (timer 10 min) showed the amber "In Progress" badge with a live relative-time caption that keeps itself fresh (re-computes every 30s client-side, matches the server-rendered value on first paint so there's no hydration flash).
+- [x] 🟡 "Abandoned" flag beyond 2× the time limit — confirmed live: an attempt started ~35 minutes earlier on the same 10-minute quiz (35 > 2×10) correctly showed the grey "Abandoned" badge instead of "In Progress", while the 15-minute one on the same quiz correctly did not.
+- [x] 🟡 `/admin/attempts/[id]` detail page — tested live for a passed attempt (all-green "Difficulty Journey" strip climbing Easy → Medium → Hard), a partially-wrong in-progress attempt (mixed green/red chips), and an attempt with zero answers (`expired` status — journey section correctly hidden, "No questions were answered" shown instead). Question-by-question review shows the correct option in green, a wrong selected option in red with "(your answer)"/"(correct answer)" labels, matching the pattern already used on the student's own result page (I factored the shared review-card markup out into `src/components/QuestionReviewList.tsx` so both pages stay in sync instead of drifting).
+- [x] 🟡 `/admin/users/[id]/attempts` — tested live for a student with 4 attempts across 2 quizzes: summary cards (Total Attempts, Average Score, Best Score, Pass Rate) computed correctly from only the *submitted* attempts, the recharts line chart plotted all 3 submitted scores in date order with a passing-percent reference line, and the attempts table below correctly hid the now-redundant Student column while keeping every filter/sort working.
+- [x] 🟡 Admins see any attempt, students cannot reach these routes — confirmed by design: every `/admin/*` route is already gated by `src/app/admin/layout.tsx`, which redirects anyone who isn't `role: admin, status: active` to `/dashboard` before the page even renders, and I confirmed via a direct SQL policy check that `attempts`/`attempt_answers`/`profiles` all have an explicit `private.is_admin()` RLS clause granting admins full read access (the same `createClient()` pattern already used by `/admin/quizzes`, `/admin/courses`, `/admin/users`).
+- [x] Both light and dark theme checked live on `/admin/attempts` and the attempt detail page — all 5 badge states (Pass/Fail/In Progress/Abandoned/Expired) and the difficulty-journey chips keep good contrast in dark mode.
 
 ---
 
