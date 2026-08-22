@@ -2,9 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, ClipboardList, Eye } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, ClipboardList, Eye } from "lucide-react";
 import {
-  Badge,
   EmptyState,
   Table,
   TableBody,
@@ -13,7 +12,8 @@ import {
   TableHeaderCell,
   TableRow,
 } from "@/components/ui";
-import { formatDateTime, formatDuration, formatRelativeTime } from "@/lib/format";
+import { ResultBadge } from "@/components/admin/ResultBadge";
+import { formatDateTime, formatDuration } from "@/lib/format";
 import { resultKind, type ResultKind } from "@/lib/attempt-status";
 import type { Enums } from "@/types/database";
 
@@ -304,27 +304,7 @@ export function AttemptsTable({
                 </TableCell>
                 <TableCell>{row.percentage !== null ? `${row.percentage}%` : "—"}</TableCell>
                 <TableCell>
-                  {kind === "pass" && <Badge variant="success">Pass</Badge>}
-                  {kind === "fail" && <Badge variant="danger">Fail</Badge>}
-                  {kind === "expired" && <Badge variant="neutral">Expired</Badge>}
-                  {kind === "in_progress" && (
-                    <div className="space-y-0.5">
-                      <Badge variant="warning">In Progress</Badge>
-                      <div className="text-xs text-fg-muted">
-                        started {formatRelativeTime(row.startedAt, now)}
-                      </div>
-                    </div>
-                  )}
-                  {kind === "abandoned" && (
-                    <div className="space-y-0.5">
-                      <Badge variant="neutral" className="gap-1">
-                        <AlertTriangle className="size-3" /> Abandoned
-                      </Badge>
-                      <div className="text-xs text-fg-muted">
-                        started {formatRelativeTime(row.startedAt, now)}
-                      </div>
-                    </div>
-                  )}
+                  <ResultBadge kind={kind} startedAt={row.startedAt} now={now} />
                 </TableCell>
                 <TableCell>
                   <Link

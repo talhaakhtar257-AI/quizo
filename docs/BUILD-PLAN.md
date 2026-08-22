@@ -27,7 +27,7 @@ Sequential task list. Work top to bottom. Tick each box as it is finished and te
 | 13 | Quiz engine (K) | ✅ |
 | 14 | Attempt tracking (G) | ✅ |
 | 15 | Analytics (H) | ✅ |
-| 16 | Export (I) | ☐ |
+| 16 | Export (I) | ✅ |
 | 17 | Certificates (L) | ☐ |
 | 18 | Testing | ☐ |
 | 19 | Deploy | ☐ |
@@ -742,6 +742,43 @@ All exports apply the CURRENT filters. Note beside the buttons:
 "Exports use your current filters."
 Warn before exporting more than 5000 rows.
 ```
+
+- [x] `/admin/reports` built at `src/app/admin/reports/`: filters for Course, Quiz (narrows to the
+      selected course's quizzes), Student, Result (Pass/Fail/In progress/Abandoned/Expired), and a
+      date range. Table columns match the spec (Student, Email, Quiz, Attempt, Date, Score, Total,
+      %, Result, Time taken), sortable on every numeric/text column, 50 rows per page.
+- [x] Summary line "Showing N results. Average X%. Pass rate Y%." — average and pass rate are
+      computed over graded (submitted) rows only in the *filtered* set, matching how the admin
+      dashboard computes its own pass rate. Verified by hand: filtering to one course dropped 12
+      results to 8, average 74%→69%, pass rate 56%→50%, exactly matching a manual recalculation
+      from the seeded scores.
+- [x] Export to Excel (`src/app/admin/reports/export.ts`, using the project's `xlsx` package):
+      three sheets — Summary (filters applied + totals), Results (one row per attempt), Question
+      Analysis (per question across the *filtered* attempts only: text, quiz, difficulty, times
+      shown, times correct, % correct). Verified the Question Analysis numbers by hand against the
+      seeded answer data — they matched exactly, confirming the sheet is correctly scoped to only
+      the attempts that survive the current filters, not every attempt in the database.
+      Filename `quiz-results-YYYY-MM-DD.xlsx`.
+- [x] Export to CSV — same Results columns, correct comma-escaping verified on a value containing a
+      comma ("Aug 19, 2026").
+- [x] Export to PDF (`jspdf` + `jspdf-autotable`, landscape) — title, filters line, summary line,
+      results table with a purple header row. Confirmed it renders in light colours (white
+      background, dark text, purple `#4F46E5` header) while the app itself was in dark mode.
+- [x] "Exports use your current filters" note shown beside the buttons; each export reads the
+      *filtered* (not paginated) row set, so a multi-page filtered result still exports in full.
+- [x] Large-export warning: a confirmation Modal appears before exporting more than 5000 rows,
+      naming the exact row count, with Cancel/Export-anyway buttons. Verified live by temporarily
+      lowering the threshold to 5 (reverted before committing) — seeding 5,000+ real rows wasn't
+      practical, but the same code path ran end-to-end: Cancel produced no download, Export anyway
+      downloaded the full filtered set.
+- [x] Pagination verified live the same way (temporarily lowered the page size to 5, reverted
+      after): "Page 1 of 3" for 12 rows, Next/Previous moved between non-overlapping row sets, and
+      changing any filter resets back to page 1.
+- [x] **Known trade-off, told to the user:** the project's free `xlsx` (SheetJS Community Edition)
+      package cannot write bold cell styling or frozen panes — both are SheetJS Pro–only features,
+      and this project must stay on free tools. The Excel header row is still clearly separated by
+      being its own row with column widths sized to fit, but it is not bold and does not freeze
+      when scrolling. Column widths and percentage formatting (both free features) are applied.
 
 ---
 
