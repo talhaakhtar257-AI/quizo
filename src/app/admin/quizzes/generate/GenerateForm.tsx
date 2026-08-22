@@ -46,6 +46,7 @@ export function GenerateForm({
   const [contentId, setContentId] = useState(initialContentId ?? "");
   const [title, setTitle] = useState("");
   const [perLevel, setPerLevel] = useState(20);
+  const [perLevelText, setPerLevelText] = useState("20");
   const [running, setRunning] = useState(false);
   const [results, setResults] = useState<Record<Difficulty, LevelResult> | null>(null);
   const [quizId, setQuizId] = useState<string | null>(null);
@@ -203,10 +204,20 @@ export function GenerateForm({
           min={5}
           max={100}
           disabled={running}
-          value={perLevel}
-          onChange={(event) =>
-            setPerLevel(Math.max(5, Math.min(100, Number(event.target.value) || 5)))
-          }
+          value={perLevelText}
+          onChange={(event) => {
+            const raw = event.target.value;
+            setPerLevelText(raw);
+            const parsed = Number(raw);
+            if (raw.trim() !== "" && !Number.isNaN(parsed)) {
+              setPerLevel(parsed);
+            }
+          }}
+          onBlur={() => {
+            const clamped = Math.max(5, Math.min(100, perLevel || 5));
+            setPerLevel(clamped);
+            setPerLevelText(String(clamped));
+          }}
           className="h-11 w-32 rounded-md border border-border bg-surface px-3 text-base text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-60"
         />
         <p className="text-sm text-fg-secondary">
