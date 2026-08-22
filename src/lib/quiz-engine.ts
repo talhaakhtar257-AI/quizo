@@ -62,6 +62,173 @@ export function questionAvailabilityDetail(
   return { ok: !short, detail };
 }
 
+// The server clock is the only source of truth for time remaining — it is
+// always recomputed from started_at rather than trusted from a stored
+// counter, so there is nothing to drift and no client value to trust.
+export function computeSecondsRemaining(timerMinutes: number, startedAt: string): number {
+  const totalSeconds = timerMinutes * 60;
+  const elapsedSeconds = Math.floor((Date.now() - new Date(startedAt).getTime()) / 1000);
+  return Math.max(0, totalSeconds - elapsedSeconds);
+}
+
+function generateCertificateCode(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no ambiguous-looking characters
+  let code = "";
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return `CERT-${new Date().getFullYear()}-${code}`;
+}
+
+export interface FinalizedAttempt {
+  percentage: number;
+  passed: boolean;
+  score: number;
+  totalQuestions: number;
+}
+
+// Scores the attempt from its saved answers, marks it submitted, and issues
+// a certificate on a pass. Idempotent: calling it again on an
+// already-submitted attempt just returns the stored result, and a
+// status='in_progress' guard on the update protects against two requests
+// (e.g. a heartbeat and next-question) finalizing the same attempt at once.
+export async function finalizeAttempt(
+  supabase: ServiceClient,
+  attemptId: string
+): Promise<FinalizedAttempt> {
+  const { data: attempt } = await supabase
+    .from("attempts")
+    .select("id, user_id, status, score, percentage, passed, total_questions, quizzes(passing_percent)")
+    .eq("id", attemptId)
+    .maybeSingle();
+
+  if (!attempt) throw new Error("Attempt not found.");
+
+  if (attempt.status !== "in_progress") {
+    return {
+      percentage: attempt.percentage ?? 0,
+      passed: attempt.passed ?? false,
+      score: attempt.score ?? 0,
+      totalQuestions: attempt.total_questions ?? 0,
+    };
+  }
+
+  const { data: answers } = await supabase
+    .from("attempt_answers")
+    .select("is_correct")
+    .eq("attempt_id", attemptId);
+
+  const score = (answers ?? []).filter((answer) => answer.is_correct).length;
+  const totalQuestions = answers?.length ?? 0;
+  const percentage = totalQuestions > 0 ? Math.round((score / totalQuestions) * 1000) / 10 : 0;
+  const passingPercent = attempt.quizzes?.passing_percent ?? 70;
+  const passed = percentage >= passingPercent;
+
+  const { data: updatedRows } = await supabase
+    .from("attempts")
+    .update({
+      status: "submitted",
+      score,
+      percentage,
+      passed,
+      total_questions: totalQuestions,
+      submitted_at: new Date().toISOString(),
+      time_remaining_seconds: 0,
+    })
+    .eq("id", attemptId)
+    .eq("status", "in_progress")
+    .select("id");
+
+  if (!updatedRows || updatedRows.length === 0) {
+    // Another request finalized this attempt in the moment between our read
+    // and write — return its result instead of scoring (and certifying) twice.
+    const { data: existing } = await supabase
+      .from("attempts")
+      .select("score, percentage, passed, total_questions")
+      .eq("id", attemptId)
+      .single();
+    return {
+      percentage: existing?.percentage ?? 0,
+      passed: existing?.passed ?? false,
+      score: existing?.score ?? 0,
+      totalQuestions: existing?.total_questions ?? 0,
+    };
+  }
+
+  if (passed) {
+    for (let tries = 0; tries < 3; tries++) {
+      const { error } = await supabase.from("certificates").insert({
+        attempt_id: attemptId,
+        user_id: attempt.user_id,
+        certificate_code: generateCertificateCode(),
+      });
+      if (!error) break;
+    }
+  }
+
+  return { percentage, passed, score, totalQuestions };
+}
+
+export interface AttemptContext {
+  attempt: {
+    id: string;
+    userId: string;
+    quizId: string;
+    status: Enums<"attempt_status">;
+    currentDifficulty: Difficulty;
+    questionsAnswered: number;
+    startedAt: string;
+  };
+  quiz: {
+    id: string;
+    timerMinutes: number;
+    questionsToShow: number;
+    passingPercent: number;
+    difficultyMode: DifficultyMode;
+  };
+}
+
+// Shared by every quiz-engine API route: loads the attempt and its quiz in
+// one go and verifies the caller actually owns it. RLS is bypassed by the
+// service client, so this ownership check is the thing standing in for it.
+export async function loadAttemptContext(
+  supabase: ServiceClient,
+  attemptId: string,
+  userId: string
+): Promise<{ ok: true; context: AttemptContext } | { ok: false; status: number; error: string }> {
+  const { data: attempt } = await supabase
+    .from("attempts")
+    .select(
+      "id, user_id, quiz_id, status, current_difficulty, questions_answered, started_at, quizzes(id, timer_minutes, questions_to_show, passing_percent, difficulty_mode)"
+    )
+    .eq("id", attemptId)
+    .maybeSingle();
+
+  if (!attempt) return { ok: false, status: 404, error: "Attempt not found." };
+  if (attempt.user_id !== userId) return { ok: false, status: 403, error: "This is not your attempt." };
+  if (!attempt.quizzes) return { ok: false, status: 500, error: "Quiz data for this attempt is missing." };
+
+  return {
+    ok: true,
+    context: {
+      attempt: {
+        id: attempt.id,
+        userId: attempt.user_id,
+        quizId: attempt.quiz_id,
+        status: attempt.status,
+        currentDifficulty: attempt.current_difficulty,
+        questionsAnswered: attempt.questions_answered,
+        startedAt: attempt.started_at,
+      },
+      quiz: {
+        id: attempt.quizzes.id,
+        timerMinutes: attempt.quizzes.timer_minutes,
+        questionsToShow: attempt.quizzes.questions_to_show,
+        passingPercent: attempt.quizzes.passing_percent,
+        difficultyMode: attempt.quizzes.difficulty_mode,
+      },
+    },
+  };
+}
+
 export interface EligibleQuiz {
   id: string;
   title: string;
@@ -118,7 +285,7 @@ export async function checkEligibility(
 
   const { data: attempts } = await supabase
     .from("attempts")
-    .select("id, status, current_difficulty, time_remaining_seconds, questions_answered")
+    .select("id, status, current_difficulty, questions_answered, started_at")
     .eq("quiz_id", quizId)
     .eq("user_id", userId);
 
@@ -139,17 +306,24 @@ export async function checkEligibility(
   };
 
   if (inProgressRow) {
-    return {
-      ok: true,
-      quiz: eligibleQuiz,
-      attemptsUsed,
-      inProgressAttempt: {
-        id: inProgressRow.id,
-        currentDifficulty: inProgressRow.current_difficulty,
-        timeRemainingSeconds: inProgressRow.time_remaining_seconds ?? 0,
-        questionsAnswered: inProgressRow.questions_answered,
-      },
-    };
+    const secondsRemaining = computeSecondsRemaining(quiz.timer_minutes, inProgressRow.started_at);
+    // The student never came back before time ran out — close it out now
+    // instead of showing a Resume screen for a quiz that's already over.
+    if (secondsRemaining <= 0) {
+      await finalizeAttempt(supabase, inProgressRow.id);
+    } else {
+      return {
+        ok: true,
+        quiz: eligibleQuiz,
+        attemptsUsed,
+        inProgressAttempt: {
+          id: inProgressRow.id,
+          currentDifficulty: inProgressRow.current_difficulty,
+          timeRemainingSeconds: secondsRemaining,
+          questionsAnswered: inProgressRow.questions_answered,
+        },
+      };
+    }
   }
 
   if (!quiz.is_published) {
