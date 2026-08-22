@@ -518,7 +518,91 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      dashboard_attempts_per_day: {
+        Args: {
+          p_course_id?: string
+          p_from?: string
+          p_quiz_id?: string
+          p_to?: string
+        }
+        Returns: {
+          attempt_count: number
+          day: string
+        }[]
+      }
+      dashboard_avg_score_per_quiz: {
+        Args: {
+          p_course_id?: string
+          p_from?: string
+          p_quiz_id?: string
+          p_to?: string
+        }
+        Returns: {
+          attempt_count: number
+          avg_percentage: number
+          passing_percent: number
+          quiz_id: string
+          quiz_title: string
+        }[]
+      }
+      dashboard_difficulty_breakdown: {
+        Args: {
+          p_course_id?: string
+          p_from?: string
+          p_quiz_id?: string
+          p_to?: string
+        }
+        Returns: {
+          correct_count: number
+          difficulty: string
+          wrong_count: number
+        }[]
+      }
+      dashboard_pass_fail: {
+        Args: {
+          p_course_id?: string
+          p_from?: string
+          p_quiz_id?: string
+          p_to?: string
+        }
+        Returns: {
+          failed_count: number
+          passed_count: number
+        }[]
+      }
+      dashboard_student_performance: {
+        Args: {
+          p_course_id?: string
+          p_from?: string
+          p_quiz_id?: string
+          p_to?: string
+        }
+        Returns: {
+          attempt_count: number
+          avg_percentage: number
+          email: string
+          full_name: string
+          latest_passed: boolean
+          user_id: string
+        }[]
+      }
+      dashboard_weak_questions: {
+        Args: {
+          p_course_id?: string
+          p_from?: string
+          p_quiz_id?: string
+          p_to?: string
+        }
+        Returns: {
+          difficulty: string
+          question_id: string
+          question_text: string
+          quiz_title: string
+          times_shown: number
+          times_wrong: number
+          wrong_percent: number
+        }[]
+      }
     }
     Enums: {
       attempt_status: "in_progress" | "submitted" | "expired"

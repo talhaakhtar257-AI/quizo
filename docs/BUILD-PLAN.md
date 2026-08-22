@@ -26,7 +26,7 @@ Sequential task list. Work top to bottom. Tick each box as it is finished and te
 | 12 | Student dashboard (J) | ✅ |
 | 13 | Quiz engine (K) | ✅ |
 | 14 | Attempt tracking (G) | ✅ |
-| 15 | Analytics (H) | ☐ |
+| 15 | Analytics (H) | ✅ |
 | 16 | Export (I) | ☐ |
 | 17 | Certificates (L) | ☐ |
 | 18 | Testing | ☐ |
@@ -701,6 +701,15 @@ EmptyState per chart when there is no data, never a broken empty graph.
 ```
 
 > Row 6 is the quality check on the AI, and a strong thing to demo.
+
+- [x] 🟡 All aggregation happens in SQL — added 6 Postgres functions (`dashboard_attempts_per_day`, `dashboard_pass_fail`, `dashboard_avg_score_per_quiz`, `dashboard_weak_questions`, `dashboard_student_performance`, `dashboard_difficulty_breakdown`), each taking the same 4 filters (date range, course, quiz) and called via `supabase.rpc()`. No row-by-row JS aggregation. `SECURITY INVOKER` (not definer) — relies on the same admin-bypass RLS policy already used by every other admin page, so no new privilege surface was added. Regenerated `src/types/database.ts` afterward so the RPC calls are fully typed.
+- [x] 🟡 Row 1 stat cards are deliberately **unfiltered** (all-time platform totals) while Rows 2–6 respond to the filter bar — tested live and confirmed this is a real, visible difference (e.g. "Overall Pass Rate 54%" in the cards stayed fixed while the filtered donut below it changed from 50% → 25% → 33% as the quiz/date filters changed), which is the intended design: a stable top-line health check plus a filterable deep-dive underneath.
+- [x] 🟡 Built and tested live with 14 seeded attempts across 3 students and 2 quizzes (one quiz deliberately below its passing average, one above; one question deliberately wrong 75% of the time; one attempt outside the default 30-day window to prove the default range excludes it until widened): all 6 rows rendered correct numbers I'd hand-calculated in advance — attempts-per-day line, pass/fail donut with centred %, the average-score bar chart, the weak-questions table (only questions shown ≥5 times appeared, exactly as specified), Top Performers / Needs Attention, and the difficulty-separation grouped bar (Hard visibly answered wrong far more than Easy — the AI-quality check the spec calls out).
+- [x] 🟡 Filters actually change the charts — confirmed live: selecting a specific quiz recalculated every row below (Row 1 stayed fixed, as intended), and widening the date range pulled in an attempt that had been excluded by the default 30-day window, changing the average score bar from red (below passing) to green (above it) as new data entered the window.
+- [x] The "average score per quiz" **vertical reference line at that quiz's passing percentage"** doesn't literally work as one line, since every quiz can have a different passing percent on the same chart. Built instead as a per-bar custom shape: each horizontal bar draws its own short tick mark at its own passing threshold, and the bar itself is coloured success/danger depending on whether the average clears that quiz's own line. Confirmed live this lines up pixel-correctly with the axis.
+- [x] EmptyState per chart, never a broken empty graph — every chart component (`AttemptsPerDayChart`, `PassFailDonut`, `AvgScorePerQuizChart`, `WeakQuestionsTable`, `PerformersLists`, `DifficultyBreakdownChart`) renders a dedicated `EmptyState` when its data array is empty, verified by code review (all 6 had real data during this round of testing, so the zero-data path wasn't exercised live — worth a quick manual look at `/admin/dashboard` on a totally fresh database if you want to see it firsthand).
+- [x] Skeleton loading state — added `src/app/admin/dashboard/loading.tsx` (the standard Next.js route-level loading UI), shown automatically while the page's server-side data fetch is in flight.
+- [x] Both light and dark theme checked live — stat cards, the donut, the bar charts, and all badges keep good contrast in dark mode.
 
 ---
 
