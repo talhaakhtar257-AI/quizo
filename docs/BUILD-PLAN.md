@@ -529,6 +529,8 @@ If an in_progress attempt already exists, show a RESUME screen instead with
 the time remaining and a Resume button.
 ```
 
+- [x] 🟡 13.1 built and tested live with a throwaway published quiz (3 questions/level, 9 approved questions, adaptive mode, 10 min timer, 2 max attempts) assigned to a fresh throwaway student. Confirmed: correct title/course/question count/time limit/passing %/"attempt 1 of 2"; rules list includes the adaptive-only rule; Start button stays disabled until the checkbox is ticked; clicking Start created an `attempts` row with the right values (`status=in_progress`, `current_difficulty=easy`, `time_remaining_seconds=600`, `total_questions=3`, `questions_answered=0`) and navigated to `/quiz/[id]/attempt/[attemptId]` (404s for now — that page is Stage 13.3, not built yet). Reloading the instructions URL with that attempt still in progress correctly showed the RESUME screen instead, with the right time remaining, difficulty, and answered count. Also drove every failure path to a real screen (never blank): quiz id that doesn't exist, quiz not assigned to this student, quiz not published, deadline already passed, all attempts used up, and not enough approved questions — each showed its own clear message and a "Back to Dashboard" link. Checked both dark and light theme.
+
 ### 13.2 🟢 The adaptive engine (server-side only)
 
 ```

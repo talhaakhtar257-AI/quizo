@@ -171,7 +171,7 @@ export default async function DashboardPage() {
                       {attempt.percentage}%
                     </Badge>
                     <Link
-                      href={`/quiz/${attempt.quiz_id}/result?attempt=${attempt.id}`}
+                      href={`/quiz/result/${attempt.id}`}
                       className={buttonVariants({ size: "sm", variant: "secondary" })}
                     >
                       View

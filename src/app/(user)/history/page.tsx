@@ -81,7 +81,7 @@ export default async function HistoryPage() {
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Link
-                        href={`/quiz/${attempt.quiz_id}/result?attempt=${attempt.id}`}
+                        href={`/quiz/result/${attempt.id}`}
                         className={buttonVariants({ size: "sm", variant: "secondary" })}
                       >
                         View Result
