@@ -1012,7 +1012,15 @@ Prepare for production:
 Tell me clearly whether the build succeeded.
 ```
 
-- [ ] 🟡 `npm run build` passes with zero errors
+- [x] 🟡 `npm run build` passes with zero errors — clean build, only one pre-existing benign
+      warning unrelated to this project (a stray `package-lock.json` in the Windows user folder
+      outside the git repo). Along the way: deleted a leftover OCR test scratch file from
+      `public/` (no other test-only routes existed), confirmed there were zero `console.log`
+      calls anywhere and zero hardcoded secrets, confirmed `.env.local` stays gitignored and was
+      never tracked, added a styled 404 page and error page (neither existed before — an
+      unmatched URL or a thrown error would have shown Next.js's bare default page), and added a
+      specific browser-tab title to every single page (previously every page just said "Quizo"
+      with no way to tell them apart).
 - [ ] 🟢 `Commit as "Ready for production" and push to GitHub.`
 
 ### 19.2 🔵 Vercel
