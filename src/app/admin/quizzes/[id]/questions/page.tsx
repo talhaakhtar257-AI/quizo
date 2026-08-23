@@ -1,9 +1,12 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Plus, Settings } from "lucide-react";
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { buttonVariants, type Difficulty } from "@/components/ui";
 import { QuestionsReview, type Summary } from "./QuestionsReview";
+
+export const metadata: Metadata = { title: "Review Questions" };
 
 function computeSummary(
   rows: { difficulty: Difficulty; is_approved: boolean }[]

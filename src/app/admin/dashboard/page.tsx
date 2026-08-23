@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { BookOpen, ClipboardList, Clock, ListChecks, Target, Users } from "lucide-react";
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
+
+export const metadata: Metadata = { title: "Admin Dashboard" };
 import { Card } from "@/components/ui";
 import type { Difficulty } from "@/lib/quiz-engine";
 import { DashboardFilters } from "./DashboardFilters";

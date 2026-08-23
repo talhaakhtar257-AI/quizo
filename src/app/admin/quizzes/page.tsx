@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { Plus, Sparkles } from "lucide-react";
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
+
+export const metadata: Metadata = { title: "Quizzes" };
 import { buttonVariants } from "@/components/ui";
 import { QuizzesTable, type QuizRow } from "./QuizzesTable";
 

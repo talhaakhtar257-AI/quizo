@@ -10,8 +10,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Quizo",
-  description: "Adaptive quiz platform",
+  title: { template: "%s | Quizo", default: "Quizo — Adaptive Quiz Platform" },
+  description:
+    "Quizo turns study material into scenario-based quizzes that adapt to each student's answers in real time.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

@@ -1,5 +1,8 @@
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { QuizForm } from "../QuizForm";
+
+export const metadata: Metadata = { title: "New Quiz" };
 
 export default async function NewQuizPage(
   props: PageProps<"/admin/quizzes/new">

@@ -1,10 +1,13 @@
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
 import { getCurrentUser } from "@/lib/get-current-user";
 import { createServiceClient } from "@/lib/supabase/service";
 import { checkEligibility } from "@/lib/quiz-engine";
 import { IneligibleNotice } from "@/components/user/IneligibleNotice";
 import { StartQuizPanel } from "./StartQuizPanel";
 import { ResumePanel } from "./ResumePanel";
+
+export const metadata: Metadata = { title: "Start Quiz" };
 
 export default async function QuizStartPage({
   params,

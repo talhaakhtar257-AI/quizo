@@ -1,7 +1,10 @@
 import { BadgeCheck, ShieldX } from "lucide-react";
+import type { Metadata } from "next";
 import { createServiceClient } from "@/lib/supabase/service";
 import { Badge, Card } from "@/components/ui";
 import { formatDate } from "@/lib/format";
+
+export const metadata: Metadata = { title: "Verify Certificate" };
 
 export default async function VerifyCertificatePage({
   params,

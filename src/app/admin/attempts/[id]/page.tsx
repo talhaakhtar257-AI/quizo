@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, XCircle } from "lucide-react";
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
+
+export const metadata: Metadata = { title: "Attempt Detail" };
 import { IneligibleNotice } from "@/components/user/IneligibleNotice";
 import { Badge, Card } from "@/components/ui";
 import { formatDateTime, formatDuration, formatRelativeTime } from "@/lib/format";

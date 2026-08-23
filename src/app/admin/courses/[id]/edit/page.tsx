@@ -1,6 +1,9 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { CourseForm } from "../../CourseForm";
+
+export const metadata: Metadata = { title: "Edit Course" };
 
 export default async function EditCoursePage(
   props: PageProps<"/admin/courses/[id]/edit">

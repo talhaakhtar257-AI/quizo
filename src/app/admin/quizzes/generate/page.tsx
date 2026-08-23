@@ -1,5 +1,8 @@
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { GenerateForm } from "./GenerateForm";
+
+export const metadata: Metadata = { title: "Generate Questions" };
 
 export default async function GenerateQuestionsPage(
   props: PageProps<"/admin/quizzes/generate">

@@ -1,6 +1,9 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { QuizForm } from "../../QuizForm";
+
+export const metadata: Metadata = { title: "Quiz Settings" };
 
 export default async function QuizSettingsPage(
   props: PageProps<"/admin/quizzes/[id]/settings">

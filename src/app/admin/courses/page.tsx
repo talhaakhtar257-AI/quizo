@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
+
+export const metadata: Metadata = { title: "Courses" };
 import { buttonVariants } from "@/components/ui";
 import { CoursesTable, type CourseRow } from "./CoursesTable";
 

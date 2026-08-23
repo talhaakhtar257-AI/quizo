@@ -8,6 +8,9 @@ import { formatDate } from "@/lib/format";
 import { AssignedQuizCard } from "@/components/user/AssignedQuizCard";
 import { ProgressChart } from "@/components/user/ProgressChart";
 import type { AssignmentQuiz, AttemptSummary } from "@/lib/quiz-status";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = { title: "Dashboard" };
 
 export default async function DashboardPage() {
   const currentUser = await getCurrentUser();

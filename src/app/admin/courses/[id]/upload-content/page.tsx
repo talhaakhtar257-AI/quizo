@@ -1,8 +1,11 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { ContentUploader } from "./ContentUploader";
 import { UploadsList } from "./UploadsList";
+
+export const metadata: Metadata = { title: "Upload Content" };
 
 export default async function UploadContentPage(
   props: PageProps<"/admin/courses/[id]/upload-content">

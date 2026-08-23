@@ -1,7 +1,10 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { AssignForm, type AssignedRow, type AssignableUser } from "./AssignForm";
+
+export const metadata: Metadata = { title: "Assign Quiz" };
 
 export default async function AssignQuizPage(
   props: PageProps<"/admin/quizzes/[id]/assign">

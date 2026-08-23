@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { Clock } from "lucide-react";
+import type { Metadata } from "next";
 import { Card } from "@/components/ui";
+
+export const metadata: Metadata = { title: "Pending Approval" };
 
 export default function PendingApprovalPage() {
   return (

@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Award, CheckCircle2, Trophy, XCircle } from "lucide-react";
+import type { Metadata } from "next";
 import { getCurrentUser } from "@/lib/get-current-user";
+
+export const metadata: Metadata = { title: "Quiz Result" };
 import { createServiceClient } from "@/lib/supabase/service";
 import { IneligibleNotice } from "@/components/user/IneligibleNotice";
 import { Card, buttonVariants } from "@/components/ui";

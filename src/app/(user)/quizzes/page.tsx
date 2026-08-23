@@ -1,6 +1,9 @@
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import type { AttemptSummary } from "@/lib/quiz-status";
 import { QuizzesTabs, type AssignmentEntry } from "./QuizzesTabs";
+
+export const metadata: Metadata = { title: "My Quizzes" };
 
 export default async function MyQuizzesPage() {
   const supabase = await createClient();

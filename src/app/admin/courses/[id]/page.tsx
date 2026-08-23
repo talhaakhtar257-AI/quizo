@@ -1,7 +1,10 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Plus, ListChecks, Upload, Sparkles } from "lucide-react";
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
+
+export const metadata: Metadata = { title: "Course Detail" };
 import { buttonVariants, EmptyState, Badge } from "@/components/ui";
 import { OutlineList } from "./OutlineList";
 

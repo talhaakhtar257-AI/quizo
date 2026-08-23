@@ -1,5 +1,8 @@
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { UsersTable, type ActiveUserRow, type PendingUserRow, type RejectedUserRow } from "./UsersTable";
+
+export const metadata: Metadata = { title: "Users" };
 
 export default async function AdminUsersPage() {
   const supabase = await createClient();

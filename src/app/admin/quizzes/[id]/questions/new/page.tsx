@@ -1,7 +1,10 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { NewQuestionForm } from "./NewQuestionForm";
+
+export const metadata: Metadata = { title: "Add Question" };
 
 export default async function NewQuestionPage(
   props: PageProps<"/admin/quizzes/[id]/questions/new">

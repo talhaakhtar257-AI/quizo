@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { History as HistoryIcon } from "lucide-react";
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
+
+export const metadata: Metadata = { title: "History" };
 import {
   Badge,
   EmptyState,

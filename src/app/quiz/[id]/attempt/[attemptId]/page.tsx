@@ -1,9 +1,12 @@
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
 import { getCurrentUser } from "@/lib/get-current-user";
 import { createServiceClient } from "@/lib/supabase/service";
 import { loadAttemptContext } from "@/lib/quiz-engine";
 import { IneligibleNotice } from "@/components/user/IneligibleNotice";
 import { QuizAttemptScreen } from "./QuizAttemptScreen";
+
+export const metadata: Metadata = { title: "Quiz in Progress" };
 
 export default async function QuizAttemptPage({
   params,

@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { ArrowLeft, Award, ClipboardList, Target, TrendingUp } from "lucide-react";
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
+
+export const metadata: Metadata = { title: "Student Attempts" };
 import { IneligibleNotice } from "@/components/user/IneligibleNotice";
 import { Card } from "@/components/ui";
 import { ProgressChart } from "@/components/user/ProgressChart";

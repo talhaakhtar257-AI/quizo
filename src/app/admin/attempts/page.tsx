@@ -1,5 +1,8 @@
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { AttemptsTable, type AttemptRow } from "./AttemptsTable";
+
+export const metadata: Metadata = { title: "Attempts" };
 
 export default async function AdminAttemptsPage() {
   const supabase = await createClient();
