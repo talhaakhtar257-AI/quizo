@@ -870,17 +870,58 @@ A student downloads only their own certificate — check ownership server-side.
 
 Two browsers: normal for admin, private window for student.
 
-- [ ] Sign up student → blocked at login → admin approves → email arrives
-- [ ] Create course + 3 topics
-- [ ] Upload content by text, then by screenshot
-- [ ] Generate 10 per level → review → edit one → delete one → approve rest
-- [ ] Create quiz: 10 min, 70%, 10 questions, Adaptive → publish → assign
-- [ ] Student takes it: fullscreen, ladder climbs and falls, close mid-quiz, resume
-- [ ] Submit → result page → download certificate
-- [ ] Admin dashboard shows the attempt in every chart
-- [ ] Attempt detail shows the difficulty journey
-- [ ] Export Excel contains the attempt
-- [ ] `/verify/[code]` works logged out
+- [x] Sign up student → blocked at login → admin approves → email arrives — signup and the
+      pending-approval block both worked live (real account `studentwork345@gmail.com`).
+      Approval itself succeeded, but the email failed to send: Resend's free/test tier only
+      delivers to the account owner's own verified address until a domain is verified — this
+      is a real, permanent limitation of the free tier (not a bug), and was confirmed in the
+      dev server logs (`[Resend API Error]`). The "approval must never roll back on email
+      failure" rule held — the account was still approved. Told the user plainly: this needs a
+      purchased domain to fix for real, deploying alone does not fix it.
+- [x] Create course + 3 topics — TEST18 Web Application Security course with SQL Injection, XSS,
+      Broken Authentication topics.
+- [x] Upload content by text, then by screenshot — pasted text upload and an OCR image upload
+      (Tesseract.js) both saved correctly.
+- [x] Generate 10 per level → review → edit one → delete one → approve rest — generated 30
+      questions (10/10/10). **Found and fixed a real bug along the way:** the "Questions per
+      difficulty level" number field clamped to its minimum (5) on every keystroke instead of
+      only on blur, so typing "10" played out as "1" → snapped to "5" → append "0" → "50" — this
+      would have tripped up a real person, not just automation. Fixed by tracking the raw typed
+      text separately from the clamped numeric value. Edited one question's wording, deleted
+      one, added one manual replacement (confirmed manual questions auto-approve), bulk-approved
+      the rest.
+- [x] Create quiz: 10 min, 70%, 10 questions, Adaptive → publish → assign — publish validation
+      correctly blocked the first save attempt ("Cannot publish... Easy 9 (need 1 more)") until
+      the pool had exactly 10 approved per level, then succeeded. Assigned to the real test
+      student.
+- [x] Student takes it: fullscreen, ladder climbs and falls, close mid-quiz, resume — three real
+      attempts (40%, 30%, 100%). Verified the full ladder sequence against the database on the
+      100% attempt: started at Medium (not Easy — see bug below), climbed to Hard and held the
+      ceiling. A ~66-second gap between two answers on an earlier attempt lined up with a
+      deliberate close-browser-and-reopen test; it resumed cleanly with no corrupted or repeated
+      question. **Found and fixed a second real bug:** retaking a quiz could show the exact same
+      10 questions as a previous attempt, since the "never repeat a question" rule only excluded
+      questions used *within the current attempt*, not past attempts. Fixed `next-question` to
+      prefer any question the student hasn't seen across their past attempts on this quiz first,
+      falling back to allowing repeats only once truly nothing unseen remains at any difficulty.
+      Verified live: 0 questions repeated from either earlier attempt on the 100% run, and the
+      first question correctly fell back to Medium since all 10 Easy questions had already been
+      exhausted by "seen" tracking.
+- [x] Submit → result page → download certificate — 100% attempt passed, certificate
+      `CERT-2026-AGPDWJ` issued and downloaded by the student.
+- [x] Admin dashboard shows the attempt in every chart — Total Attempts 3, Overall Pass Rate 33%
+      (1 pass / 2 fail) matched a hand calculation; Pass vs Fail donut, Average Score Per Quiz,
+      Top Performers/Needs Attention, and Difficulty Separation charts all reflected the real
+      data.
+- [x] Attempt detail shows the difficulty journey — the 100% attempt's Difficulty Journey strip
+      (Medium, Medium, then Hard ×8) matched the database exactly.
+- [x] Export Excel contains the attempt — downloaded `quiz-results-2026-08-23.xlsx` and read it
+      back programmatically: all 3 attempts present in the Results sheet with correct
+      scores/percentages, Question Analysis sheet correctly broken down by question including
+      the manually-edited question text.
+- [x] `/verify/[code]` works logged out — `CERT-2026-AGPDWJ` showed the green "Valid Certificate"
+      badge with name, quiz, course, score and date, no email or other PII, with no login call
+      on the page at all.
 
 ### Security 🟡 — every one of these must FAIL
 
