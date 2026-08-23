@@ -29,7 +29,7 @@ Sequential task list. Work top to bottom. Tick each box as it is finished and te
 | 15 | Analytics (H) | ✅ |
 | 16 | Export (I) | ✅ |
 | 17 | Certificates (L) | ✅ |
-| 18 | Testing | ☐ |
+| 18 | Testing | ✅ |
 | 19 | Deploy | ☐ |
 
 **Note the order:** J and K come before G, H and I. Reports about attempts cannot be built until attempts exist.
@@ -966,9 +966,20 @@ attempt correctly scored 0% and issued no certificate.
 
 ### Devices 🟡
 
-- [ ] Phone portrait — nothing overflows, quiz usable
-- [ ] Chrome and Firefox — fullscreen works in both
-- [ ] Device in dark mode — app opens dark, no flash
+- [x] Phone portrait — nothing overflows, quiz usable. **Found and fixed two real environment
+      issues along the way, neither an app bug:** (1) the home WiFi was categorized "Public" in
+      Windows, which silently blocks other devices from reaching anything on the computer —
+      switched it to "Private" and added a scoped inbound firewall rule for port 3000 on the
+      Private profile only. (2) Even after that, the phone could load the page's HTML but Next.js
+      dev mode was silently blocking every JS file from a non-localhost origin
+      (`allowedDevOrigins`), so the page never hydrated and the login form fell back to a plain
+      no-JS submit that just reloaded itself — fixed by adding the LAN IP to
+      `next.config.ts`. After both fixes: confirmed live on a real phone — portrait layout has no
+      sideways overflow, dashboard stacks in one column.
+- [x] Chrome and Firefox — fullscreen works in both. Confirmed live: a real quiz attempt entered
+      fullscreen correctly on the phone's mobile browser and separately in Firefox on desktop.
+- [x] Device in dark mode — app opens dark, no flash. Confirmed live on the phone (set to dark
+      mode): the site matched immediately with no white flash on load.
 - [x] Slow connection — loading states show. **Found and fixed a real gap while checking this:**
       only 2 of roughly 23 server-rendered pages had a route-level `loading.tsx` — every other
       page (both admin and student sides, including the quiz-taking pages) would have shown a
