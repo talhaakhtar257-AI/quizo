@@ -58,28 +58,51 @@ export async function POST(request: Request) {
     .from("attempt_answers")
     .select("question_id")
     .eq("attempt_id", attemptId);
-  const usedIds = (usedRows ?? []).map((row) => row.question_id);
+  const usedThisAttempt = (usedRows ?? []).map((row) => row.question_id);
 
-  let chosenQuestion:
-    | { id: string; difficulty: string; question_text: string; scenario_text: string | null }
-    | null = null;
+  // A student should not see the same question again on a retake as long as
+  // the pool has unseen ones left, so the exclusion set spans every attempt
+  // this student has made on this quiz, not just the current one.
+  const { data: pastAttempts } = await supabase
+    .from("attempts")
+    .select("id")
+    .eq("quiz_id", quiz.id)
+    .eq("user_id", currentUser.id);
+  const pastAttemptIds = (pastAttempts ?? []).map((row) => row.id);
+  const { data: seenRows } = pastAttemptIds.length
+    ? await supabase.from("attempt_answers").select("question_id").in("attempt_id", pastAttemptIds)
+    : { data: [] as { question_id: string }[] };
+  const seenAcrossAttempts = Array.from(
+    new Set([...usedThisAttempt, ...(seenRows ?? []).map((row) => row.question_id)])
+  );
 
-  for (const level of fallbackOrder(attempt.currentDifficulty)) {
-    let query = supabase
-      .from("questions")
-      .select("id, difficulty, question_text, scenario_text")
-      .eq("quiz_id", quiz.id)
-      .eq("difficulty", level)
-      .eq("is_approved", true);
-    if (usedIds.length > 0) {
-      query = query.not("id", "in", `(${usedIds.join(",")})`);
+  type Candidate = { id: string; difficulty: string; question_text: string; scenario_text: string | null };
+
+  async function findQuestion(excludeIds: string[]): Promise<Candidate | null> {
+    for (const level of fallbackOrder(attempt.currentDifficulty)) {
+      let query = supabase
+        .from("questions")
+        .select("id, difficulty, question_text, scenario_text")
+        .eq("quiz_id", quiz.id)
+        .eq("difficulty", level)
+        .eq("is_approved", true);
+      if (excludeIds.length > 0) {
+        query = query.not("id", "in", `(${excludeIds.join(",")})`);
+      }
+      const { data: candidates } = await query;
+      if (candidates && candidates.length > 0) {
+        return candidates[Math.floor(Math.random() * candidates.length)];
+      }
     }
-    const { data: candidates } = await query;
-    if (candidates && candidates.length > 0) {
-      chosenQuestion = candidates[Math.floor(Math.random() * candidates.length)];
-      break;
-    }
+    return null;
   }
+
+  // Prefer a question this student has never seen on this quiz before. If
+  // every approved question at every fallback level has already been shown
+  // across their past attempts, fall back to allowing repeats — but a
+  // question already used in THIS attempt is still never repeated.
+  const chosenQuestion =
+    (await findQuestion(seenAcrossAttempts)) ?? (await findQuestion(usedThisAttempt));
 
   if (!chosenQuestion) {
     const finalized = await finalizeAttempt(supabase, attemptId);
