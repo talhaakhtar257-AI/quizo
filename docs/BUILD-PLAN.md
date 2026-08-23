@@ -969,7 +969,16 @@ attempt correctly scored 0% and issued no certificate.
 - [ ] Phone portrait — nothing overflows, quiz usable
 - [ ] Chrome and Firefox — fullscreen works in both
 - [ ] Device in dark mode — app opens dark, no flash
-- [ ] Slow connection — loading states show
+- [x] Slow connection — loading states show. **Found and fixed a real gap while checking this:**
+      only 2 of roughly 23 server-rendered pages had a route-level `loading.tsx` — every other
+      page (both admin and student sides, including the quiz-taking pages) would have shown a
+      blank/frozen screen while its data loaded on a slow connection, violating CLAUDE.md's "every
+      async UI needs a loading state, no blank screens" rule. Added a fitting skeleton to every
+      page that does real server-side data fetching. Confirmed the mechanism actually works by
+      temporarily adding an artificial 3-second delay to one page and checking the dev server log
+      showed the real delay (`application-code: 3.5s`–`4.1s`) — the same Next.js `loading.tsx`
+      Suspense mechanism already visually confirmed working for the 2 pages that had it since
+      Phase 15/16, now applied uniformly.
 
 > Test on your phone: run `ipconfig`, find the IPv4 address, and open `http://192.168.x.x:3000` on your phone on the same WiFi.
 
