@@ -925,15 +925,44 @@ Two browsers: normal for admin, private window for student.
 
 ### Security 🟡 — every one of these must FAIL
 
-- [ ] Student typing `/admin/dashboard`
-- [ ] Student changing an attempt id in the URL
-- [ ] Reading `is_correct` in the Network tab
-- [ ] Changing the computer clock to gain time
-- [ ] Refreshing mid-quiz to reset the timer
-- [ ] Double-submitting the same answer
-- [ ] Exceeding max attempts
-- [ ] Pending user logging in
-- [ ] Opening an unassigned quiz by URL
+All 9 tested live against the real student account and a real quiz. 8 of 9 fully failed as
+required; the clock test was verified by code review with a caveat explained below.
+
+- [x] Student typing `/admin/dashboard` — logged in as the real student, navigated directly to
+      `/admin/dashboard`: redirected straight back to `/dashboard`, no admin content ever loaded.
+- [x] Student changing an attempt id in the URL — a syntactically valid but nonexistent attempt id
+      on both `/api/quiz/next-question` and `/quiz/result/[id]` returned a clean "not found"
+      (404 / "This result could not be found.") with no crash and no data leak. The ownership
+      check itself (`loadAttemptContext` returning 403 "This is not your attempt" for an id that
+      belongs to someone else) is unchanged code, already live-tested with two real accounts back
+      in Phase 13.
+- [x] Reading `is_correct` in the Network tab — called `/api/quiz/next-question` and
+      `/api/quiz/submit-answer` directly and searched the raw response text (not the parsed
+      object) for the literal strings `is_correct` and `isCorrect`: absent from both.
+- [~] Changing the computer clock to gain time — verified by code review: neither quiz-engine API
+      route accepts any client-supplied time value at all (`secondsRemaining` is always computed
+      server-side from `started_at`). Not meaningfully testable as a live "change the clock" test
+      *locally*, since the dev server runs on this same machine — changing the OS clock would
+      change the server's clock too. This needs a real check after Phase 19 deploy, once the
+      server is on Vercel and genuinely independent of the student's own computer clock.
+- [x] Refreshing mid-quiz to reset the timer — called next-question twice, 4 seconds apart:
+      552s → 545s. Time only ever moves down, never resets, because it's recomputed from a fixed
+      start time on every single call — there's no "refresh" code path to reset.
+- [x] Double-submitting the same answer — first submit succeeded (200), an immediate second
+      submit for the same question was rejected (409 "This question has already been answered.").
+- [x] Exceeding max attempts — temporarily set max attempts to match attempts already used (a
+      safe, reversible test on the throwaway TEST18 quiz), then tried starting another: blocked
+      with "You have used all 4 of your attempts for this quiz."
+- [x] Pending user logging in — the real student account, before being approved, saw "Almost
+      there... Your account is waiting for admin approval." and could not get in.
+- [x] Opening an unassigned quiz by URL — created a second real quiz not assigned to the student,
+      navigated straight to its `/start` URL: "This quiz has not been assigned to you." Test quiz
+      deleted afterward.
+
+Also confirmed along the way: leaving the quiz mid-attempt triggers a real browser
+"Leave site?" warning (the `beforeunload` handler from the Phase 13 spec), and a bug was
+**not** found in the `finalizeAttempt`/certificate-issuing logic — the deliberately-wrong test
+attempt correctly scored 0% and issued no certificate.
 
 ### Devices 🟡
 
