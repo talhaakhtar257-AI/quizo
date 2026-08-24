@@ -289,7 +289,7 @@ export function QuestionsReview({
       </div>
 
       {selected.size > 0 && (
-        <div className="flex items-center justify-between rounded-lg border border-primary/30 bg-primary-faint px-4 py-3">
+        <div className="sticky top-16 z-20 flex items-center justify-between rounded-lg border border-primary/30 bg-primary-faint px-4 py-3 shadow-md">
           <p className="text-sm font-medium text-fg">{selected.size} selected</p>
           <div className="flex gap-2">
             <Button size="sm" variant="secondary" onClick={selectAllVisible}>
