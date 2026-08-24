@@ -21,6 +21,7 @@ const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/webp"];
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const ACCEPTED_TEXT_EXTENSIONS = [".txt", ".md"];
 const MAX_TEXT_FILE_SIZE = 2 * 1024 * 1024;
+const MAX_PDF_FILE_SIZE = 10 * 1024 * 1024;
 // Tesseract confidence is 0-100. Handwriting and blank/blurry images
 // consistently score well below this; clear printed text scores much higher.
 const MIN_CONFIDENCE = 35;
@@ -108,23 +109,53 @@ export function ContentUploader({ courseId }: { courseId: string }) {
     if (event.dataTransfer.files) addFiles(event.dataTransfer.files);
   }
 
+  async function extractPdfText(file: File): Promise<string> {
+    const pdfjsLib = await import("pdfjs-dist");
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({
+      data: arrayBuffer,
+      standardFontDataUrl: "/pdf-standard-fonts/",
+    }).promise;
+
+    const pageTexts: string[] = [];
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+      const page = await pdf.getPage(pageNum);
+      const content = await page.getTextContent();
+      const text = content.items
+        .map((item) => ("str" in item ? item.str : ""))
+        .join(" ");
+      pageTexts.push(text.trim());
+    }
+
+    return pageTexts.filter(Boolean).join("\n\n");
+  }
+
   async function loadTextFile(file: File) {
-    const hasAcceptedExtension = ACCEPTED_TEXT_EXTENSIONS.some((extension) =>
-      file.name.toLowerCase().endsWith(extension)
-    );
+    const lowerName = file.name.toLowerCase();
+    const isPdf = lowerName.endsWith(".pdf");
+    const hasAcceptedExtension =
+      isPdf || ACCEPTED_TEXT_EXTENSIONS.some((extension) => lowerName.endsWith(extension));
     if (!hasAcceptedExtension) {
-      showToast(`${file.name} is not a .txt or .md file`, "warning");
+      showToast(`${file.name} is not a .txt, .md, or .pdf file`, "warning");
       return;
     }
-    if (file.size > MAX_TEXT_FILE_SIZE) {
-      showToast(`${file.name} is over 2MB`, "warning");
+    const maxSize = isPdf ? MAX_PDF_FILE_SIZE : MAX_TEXT_FILE_SIZE;
+    if (file.size > maxSize) {
+      showToast(`${file.name} is over ${isPdf ? "10MB" : "2MB"}`, "warning");
       return;
     }
 
     setFileReadError(null);
     setReadingFile(true);
     try {
-      const text = await file.text();
+      const text = isPdf ? await extractPdfText(file) : await file.text();
+      if (isPdf && text.trim().length < 20) {
+        setFileReadError(
+          "We could not find text in this PDF. It may be a scanned document — try the Upload Image tab instead, or paste the text directly."
+        );
+      }
       setFileText(text);
       setFileName(file.name);
     } catch {
@@ -455,11 +486,13 @@ export function ContentUploader({ courseId }: { courseId: string }) {
             <p className="text-sm font-medium text-fg">
               Drag and drop a file here, or click to browse
             </p>
-            <p className="text-xs text-fg-muted">.TXT or .MD — up to 2MB</p>
+            <p className="text-xs text-fg-muted">
+              .TXT or .MD up to 2MB, or .PDF up to 10MB
+            </p>
             <input
               ref={textFileInputRef}
               type="file"
-              accept=".txt,.md,text/plain,text/markdown"
+              accept=".txt,.md,.pdf,text/plain,text/markdown,application/pdf"
               className="hidden"
               onChange={handleTextFileInputChange}
             />
