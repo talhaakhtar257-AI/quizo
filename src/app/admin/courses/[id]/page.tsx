@@ -56,17 +56,35 @@ export default async function CourseDetailPage(
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-semibold text-fg">Content</h2>
-          <Link
-            href={`/admin/courses/${course.id}/upload-content`}
-            className={buttonVariants({ size: "sm", variant: "secondary" })}
-          >
-            <Upload className="size-4" /> Upload content
-          </Link>
+          {!!uploadCount && (
+            <Link
+              href={`/admin/courses/${course.id}/upload-content`}
+              className={buttonVariants({ size: "sm", variant: "secondary" })}
+            >
+              <Upload className="size-4" /> Upload content
+            </Link>
+          )}
         </div>
-        <p className="text-sm text-fg-secondary">
-          {uploadCount ?? 0} upload{uploadCount === 1 ? "" : "s"} saved for this
-          course.
-        </p>
+        {uploadCount ? (
+          <p className="text-sm text-fg-secondary">
+            {uploadCount} upload{uploadCount === 1 ? "" : "s"} saved for this
+            course.
+          </p>
+        ) : (
+          <EmptyState
+            icon={<Upload className="size-10" />}
+            title="No content uploaded yet"
+            description="Upload your study material as text or a screenshot so AI can generate questions from it."
+            action={
+              <Link
+                href={`/admin/courses/${course.id}/upload-content`}
+                className={buttonVariants({ size: "sm" })}
+              >
+                <Upload className="size-4" /> Upload content
+              </Link>
+            }
+          />
+        )}
       </section>
 
       <section className="space-y-4">

@@ -30,11 +30,12 @@ export function CourseForm({ course }: CourseFormProps) {
       if (course) {
         await updateCourse(course.id, { title, description });
         showToast("Course updated", "success");
+        router.push("/admin/courses");
       } else {
-        await createCourse({ title, description });
+        const created = await createCourse({ title, description });
         showToast("Course created", "success");
+        router.push(`/admin/courses/${created.id}`);
       }
-      router.push("/admin/courses");
       router.refresh();
     } catch {
       setError("Something went wrong. Please try again.");

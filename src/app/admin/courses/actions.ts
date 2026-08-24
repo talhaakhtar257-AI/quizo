@@ -14,14 +14,19 @@ export async function createCourse(input: CourseInput) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { error } = await supabase.from("courses").insert({
-    title: input.title,
-    description: input.description || null,
-    created_by: user?.id,
-  });
+  const { data, error } = await supabase
+    .from("courses")
+    .insert({
+      title: input.title,
+      description: input.description || null,
+      created_by: user?.id,
+    })
+    .select("id")
+    .single();
 
   if (error) throw new Error(error.message);
   revalidatePath("/admin/courses");
+  return data;
 }
 
 export async function updateCourse(courseId: string, input: CourseInput) {

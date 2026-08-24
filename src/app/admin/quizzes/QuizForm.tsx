@@ -49,12 +49,20 @@ export function QuizForm({
   const [description, setDescription] = useState(quiz?.description ?? "");
   const [courseId, setCourseId] = useState(quiz?.course_id ?? initialCourseId ?? "");
   const [timerMinutes, setTimerMinutes] = useState(quiz?.timer_minutes ?? 30);
+  const [timerMinutesText, setTimerMinutesText] = useState(String(quiz?.timer_minutes ?? 30));
   const [passingPercent, setPassingPercent] = useState(quiz?.passing_percent ?? 70);
+  const [passingPercentText, setPassingPercentText] = useState(
+    String(quiz?.passing_percent ?? 70)
+  );
   const [questionsToShow, setQuestionsToShow] = useState(quiz?.questions_to_show ?? 10);
+  const [questionsToShowText, setQuestionsToShowText] = useState(
+    String(quiz?.questions_to_show ?? 10)
+  );
   const [difficultyMode, setDifficultyMode] = useState<DifficultyMode>(
     quiz?.difficulty_mode ?? "adaptive"
   );
   const [maxAttempts, setMaxAttempts] = useState(quiz?.max_attempts ?? 1);
+  const [maxAttemptsText, setMaxAttemptsText] = useState(String(quiz?.max_attempts ?? 1));
   const [isPublished, setIsPublished] = useState(quiz?.is_published ?? false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -153,37 +161,71 @@ export function QuizForm({
             type="number"
             min={1}
             max={300}
-            value={timerMinutes}
-            onChange={(event) =>
-              setTimerMinutes(Math.max(1, Math.min(300, Number(event.target.value) || 1)))
-            }
+            value={timerMinutesText}
+            onChange={(event) => {
+              const raw = event.target.value;
+              setTimerMinutesText(raw);
+              const parsed = Number(raw);
+              if (raw.trim() !== "" && !Number.isNaN(parsed)) setTimerMinutes(parsed);
+            }}
+            onBlur={() => {
+              const clamped = Math.max(1, Math.min(300, timerMinutes || 1));
+              setTimerMinutes(clamped);
+              setTimerMinutesText(String(clamped));
+            }}
           />
           <Input
             label="Passing percentage"
             type="number"
             min={1}
             max={100}
-            value={passingPercent}
-            onChange={(event) =>
-              setPassingPercent(Math.max(1, Math.min(100, Number(event.target.value) || 1)))
-            }
+            value={passingPercentText}
+            onChange={(event) => {
+              const raw = event.target.value;
+              setPassingPercentText(raw);
+              const parsed = Number(raw);
+              if (raw.trim() !== "" && !Number.isNaN(parsed)) setPassingPercent(parsed);
+            }}
+            onBlur={() => {
+              const clamped = Math.max(1, Math.min(100, passingPercent || 1));
+              setPassingPercent(clamped);
+              setPassingPercentText(String(clamped));
+            }}
           />
           <Input
             label="Questions to show"
             type="number"
             min={1}
-            value={questionsToShow}
-            onChange={(event) =>
-              setQuestionsToShow(Math.max(1, Number(event.target.value) || 1))
-            }
+            value={questionsToShowText}
+            onChange={(event) => {
+              const raw = event.target.value;
+              setQuestionsToShowText(raw);
+              const parsed = Number(raw);
+              if (raw.trim() !== "" && !Number.isNaN(parsed)) setQuestionsToShow(parsed);
+            }}
+            onBlur={() => {
+              const clamped = Math.max(1, questionsToShow || 1);
+              setQuestionsToShow(clamped);
+              setQuestionsToShowText(String(clamped));
+            }}
           />
           <div className="space-y-2">
             <Input
               label="Maximum attempts"
               type="number"
               min={0}
-              value={maxAttempts}
-              onChange={(event) => setMaxAttempts(Math.max(0, Number(event.target.value) || 0))}
+              value={maxAttemptsText}
+              onChange={(event) => {
+                const raw = event.target.value;
+                setMaxAttemptsText(raw);
+                const parsed = Number(raw);
+                if (raw.trim() !== "" && !Number.isNaN(parsed)) setMaxAttempts(parsed);
+              }}
+              onBlur={() => {
+                const clamped = Math.max(0, maxAttempts || 0);
+                setMaxAttempts(clamped);
+                setMaxAttemptsText(String(clamped));
+              }}
             />
             <p className="text-xs text-fg-muted">0 = unlimited attempts</p>
           </div>
