@@ -38,8 +38,8 @@ export default async function UploadContentPage(
         </Link>
         <h1 className="mt-2 text-3xl font-bold text-fg">Upload content</h1>
         <p className="mt-1 text-sm text-fg-secondary">
-          Paste study material or upload a screenshot — this is what Gemini
-          will turn into quiz questions.
+          Paste study material, upload a screenshot, or upload a .txt/.md
+          file — this is what Gemini will turn into quiz questions.
         </p>
       </div>
 

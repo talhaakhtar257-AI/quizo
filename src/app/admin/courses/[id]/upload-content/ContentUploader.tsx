@@ -3,7 +3,7 @@
 import { useRef, useState, type ChangeEvent, type DragEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Upload, X, FileText, ImageIcon, Sparkles } from "lucide-react";
+import { Upload, X, FileText, ImageIcon, FileUp, Sparkles } from "lucide-react";
 import { Button, Card, Textarea, buttonVariants, useToast } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { saveContent } from "./actions";
@@ -11,6 +11,7 @@ import { saveContent } from "./actions";
 const TABS = [
   { value: "text", label: "Paste Text", icon: FileText },
   { value: "image", label: "Upload Image", icon: ImageIcon },
+  { value: "file", label: "Upload File", icon: FileUp },
 ] as const;
 type Tab = (typeof TABS)[number]["value"];
 
@@ -18,6 +19,8 @@ const MIN_RECOMMENDED_CHARS = 200;
 const MAX_RECOMMENDED_CHARS = 50_000;
 const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/webp"];
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const ACCEPTED_TEXT_EXTENSIONS = [".txt", ".md"];
+const MAX_TEXT_FILE_SIZE = 2 * 1024 * 1024;
 // Tesseract confidence is 0-100. Handwriting and blank/blurry images
 // consistently score well below this; clear printed text scores much higher.
 const MIN_CONFIDENCE = 35;
@@ -46,6 +49,15 @@ export function ContentUploader({ courseId }: { courseId: string }) {
   const [ocrError, setOcrError] = useState<string | null>(null);
   const [savingImage, setSavingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Upload File tab
+  const [fileText, setFileText] = useState("");
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [fileDragOver, setFileDragOver] = useState(false);
+  const [readingFile, setReadingFile] = useState(false);
+  const [fileReadError, setFileReadError] = useState<string | null>(null);
+  const [savingFile, setSavingFile] = useState(false);
+  const textFileInputRef = useRef<HTMLInputElement>(null);
 
   function switchTab(next: Tab) {
     setTab(next);
@@ -94,6 +106,43 @@ export function ContentUploader({ courseId }: { courseId: string }) {
     event.preventDefault();
     setDragOver(false);
     if (event.dataTransfer.files) addFiles(event.dataTransfer.files);
+  }
+
+  async function loadTextFile(file: File) {
+    const hasAcceptedExtension = ACCEPTED_TEXT_EXTENSIONS.some((extension) =>
+      file.name.toLowerCase().endsWith(extension)
+    );
+    if (!hasAcceptedExtension) {
+      showToast(`${file.name} is not a .txt or .md file`, "warning");
+      return;
+    }
+    if (file.size > MAX_TEXT_FILE_SIZE) {
+      showToast(`${file.name} is over 2MB`, "warning");
+      return;
+    }
+
+    setFileReadError(null);
+    setReadingFile(true);
+    try {
+      const text = await file.text();
+      setFileText(text);
+      setFileName(file.name);
+    } catch {
+      setFileReadError("Could not read this file. Try opening it and pasting the text instead.");
+    } finally {
+      setReadingFile(false);
+    }
+  }
+
+  function handleTextFileInputChange(event: ChangeEvent<HTMLInputElement>) {
+    if (event.target.files?.[0]) void loadTextFile(event.target.files[0]);
+    event.target.value = "";
+  }
+
+  function handleTextFileDrop(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    setFileDragOver(false);
+    if (event.dataTransfer.files?.[0]) void loadTextFile(event.dataTransfer.files[0]);
   }
 
   async function runOcr() {
@@ -186,9 +235,33 @@ export function ContentUploader({ courseId }: { courseId: string }) {
     }
   }
 
+  async function handleSaveFile() {
+    setSavingFile(true);
+    try {
+      const saved = await saveContent(courseId, {
+        sourceType: "text",
+        rawText: fileText,
+        originalFilename: fileName,
+      });
+      showToast("Content saved", "success");
+      setSavedUploadId(saved.id);
+      setFileText("");
+      setFileName(null);
+      router.refresh();
+    } catch {
+      showToast("Could not save content", "danger");
+    } finally {
+      setSavingFile(false);
+    }
+  }
+
   const charCount = pasteText.length;
   const tooShort = charCount > 0 && charCount < MIN_RECOMMENDED_CHARS;
   const tooLong = charCount > MAX_RECOMMENDED_CHARS;
+
+  const fileCharCount = fileText.length;
+  const fileTooShort = fileCharCount > 0 && fileCharCount < MIN_RECOMMENDED_CHARS;
+  const fileTooLong = fileCharCount > MAX_RECOMMENDED_CHARS;
 
   return (
     <Card className="p-6">
@@ -351,6 +424,78 @@ export function ContentUploader({ courseId }: { courseId: string }) {
             loading={savingImage}
             disabled={!imageText.trim()}
           >
+            Save content
+          </Button>
+        </div>
+      )}
+
+      {tab === "file" && (
+        <div className="mt-6 space-y-4">
+          <div
+            onDragOver={(event) => {
+              event.preventDefault();
+              setFileDragOver(true);
+            }}
+            onDragLeave={() => setFileDragOver(false)}
+            onDrop={handleTextFileDrop}
+            onClick={() => textFileInputRef.current?.click()}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") textFileInputRef.current?.click();
+            }}
+            className={cn(
+              "flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed p-8 text-center transition-colors",
+              fileDragOver
+                ? "border-primary bg-primary-faint"
+                : "border-border hover:bg-surface-raised"
+            )}
+          >
+            <Upload className="size-8 text-fg-muted" />
+            <p className="text-sm font-medium text-fg">
+              Drag and drop a file here, or click to browse
+            </p>
+            <p className="text-xs text-fg-muted">.TXT or .MD — up to 2MB</p>
+            <input
+              ref={textFileInputRef}
+              type="file"
+              accept=".txt,.md,text/plain,text/markdown"
+              className="hidden"
+              onChange={handleTextFileInputChange}
+            />
+          </div>
+
+          {readingFile && <p className="text-sm text-fg-secondary">Reading your file...</p>}
+          {fileReadError && <p className="text-sm text-danger">{fileReadError}</p>}
+          {fileName && !readingFile && (
+            <p className="text-sm text-fg-secondary">Loaded: {fileName}</p>
+          )}
+
+          {(fileText || fileName) && (
+            <>
+              <Textarea
+                label="File content (edit as needed before saving)"
+                rows={12}
+                value={fileText}
+                onChange={(event) => setFileText(event.target.value)}
+              />
+              <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                <span className="text-fg-muted">{fileCharCount.toLocaleString()} characters</span>
+                {fileTooShort && (
+                  <span className="text-warning">
+                    This is quite short — AI may not create good questions from it.
+                  </span>
+                )}
+                {fileTooLong && (
+                  <span className="text-warning">
+                    This is very long — consider splitting it into smaller uploads.
+                  </span>
+                )}
+              </div>
+            </>
+          )}
+
+          <Button onClick={handleSaveFile} loading={savingFile} disabled={!fileText.trim()}>
             Save content
           </Button>
         </div>
