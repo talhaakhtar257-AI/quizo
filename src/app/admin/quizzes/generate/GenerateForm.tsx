@@ -88,46 +88,68 @@ export function GenerateForm({
       return;
     }
 
-    for (const level of LEVELS) {
-      setResults((current) => ({ ...current!, [level.key]: { status: "running" } }));
+    await runFrom(0, createdQuizId, 0);
+  }
 
-      try {
-        const response = await fetch("/api/generate-questions", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contentId,
-            quizId: createdQuizId,
-            questionCount: perLevel,
-            difficulty: level.key,
-          }),
-        });
-        const body = await response.json();
+  // Generates one level, topping up to `perLevel` on top of whatever this
+  // level already has. Returns true only once that level reaches perLevel.
+  async function runLevel(level: Difficulty, quizIdToUse: string, alreadyHave: number) {
+    const need = Math.max(1, perLevel - alreadyHave);
+    setResults((current) => ({ ...current!, [level]: { status: "running" } }));
 
-        if (!response.ok) {
-          setResults((current) => ({
-            ...current!,
-            [level.key]: { status: "failed", error: body.error ?? "Something went wrong." },
-          }));
-          continue;
-        }
+    try {
+      const response = await fetch("/api/generate-questions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contentId,
+          quizId: quizIdToUse,
+          questionCount: need,
+          difficulty: level,
+        }),
+      });
+      const body = await response.json();
 
+      if (!response.ok) {
         setResults((current) => ({
           ...current!,
-          [level.key]: { status: "done", count: body.count },
+          [level]: { status: "failed", error: body.error ?? "Something went wrong." },
         }));
-      } catch {
-        setResults((current) => ({
-          ...current!,
-          [level.key]: {
-            status: "failed",
-            error: "Could not reach the AI service. Check your connection and try again.",
-          },
-        }));
+        return false;
       }
-    }
 
+      const total = alreadyHave + (body.count ?? 0);
+      setResults((current) => ({ ...current!, [level]: { status: "done", count: total } }));
+      return total >= perLevel;
+    } catch {
+      setResults((current) => ({
+        ...current!,
+        [level]: {
+          status: "failed",
+          error: "Could not reach the AI service. Check your connection and try again.",
+        },
+      }));
+      return false;
+    }
+  }
+
+  // Runs levels in order starting at startIndex, stopping (and waiting for a
+  // manual retry) the moment a level doesn't reach perLevel.
+  async function runFrom(startIndex: number, quizIdToUse: string, startAlreadyHave: number) {
+    setRunning(true);
+    for (let i = startIndex; i < LEVELS.length; i++) {
+      const alreadyHave = i === startIndex ? startAlreadyHave : 0;
+      const ok = await runLevel(LEVELS[i].key, quizIdToUse, alreadyHave);
+      if (!ok) break;
+    }
     setRunning(false);
+  }
+
+  function handleRetryLevel(index: number) {
+    if (!quizId || !results) return;
+    const existing = results[LEVELS[index].key];
+    const alreadyHave = existing.status === "done" ? existing.count ?? 0 : 0;
+    void runFrom(index, quizId, alreadyHave);
   }
 
   const runningIndex = results
@@ -242,29 +264,50 @@ export function GenerateForm({
 
       {results && (
         <div className="space-y-2 rounded-lg border border-border bg-surface p-4">
-          {LEVELS.map((level) => {
+          {LEVELS.map((level, index) => {
             const result = results[level.key];
+            const isShort = result.status === "done" && result.count !== perLevel;
             return (
-              <div key={level.key} className="flex items-center justify-between text-sm">
+              <div key={level.key} className="flex items-center justify-between gap-3 text-sm">
                 <span className="text-fg">{level.label}</span>
                 {result.status === "pending" && <span className="text-fg-muted">Waiting...</span>}
                 {result.status === "running" && <span className="text-primary">Generating...</span>}
-                {result.status === "done" && result.count === perLevel && (
+                {result.status === "done" && !isShort && (
                   <span className="flex items-center gap-1 text-success">
                     <CheckCircle2 className="size-4" /> {result.count} created
                   </span>
                 )}
-                {result.status === "done" && result.count !== perLevel && (
-                  <span className="flex items-center gap-1 text-warning">
-                    <AlertTriangle className="size-4" /> {result.count} of {perLevel}{" "}
-                    created — the AI returned fewer than asked. You can add more by
-                    hand on the next screen, or try generating again.
-                  </span>
+                {isShort && (
+                  <div className="flex items-center gap-2">
+                    <span className="flex items-center gap-1 text-warning">
+                      <AlertTriangle className="size-4" /> {result.count} of {perLevel} created
+                    </span>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      disabled={running}
+                      onClick={() => handleRetryLevel(index)}
+                    >
+                      Generate again
+                    </Button>
+                  </div>
                 )}
                 {result.status === "failed" && (
-                  <span className="flex items-center gap-1 text-danger">
-                    <AlertTriangle className="size-4" /> {result.error}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="flex items-center gap-1 text-danger">
+                      <AlertTriangle className="size-4" /> {result.error}
+                    </span>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      disabled={running}
+                      onClick={() => handleRetryLevel(index)}
+                    >
+                      Generate again
+                    </Button>
+                  </div>
                 )}
               </div>
             );
