@@ -249,9 +249,16 @@ export function GenerateForm({
                 <span className="text-fg">{level.label}</span>
                 {result.status === "pending" && <span className="text-fg-muted">Waiting...</span>}
                 {result.status === "running" && <span className="text-primary">Generating...</span>}
-                {result.status === "done" && (
+                {result.status === "done" && result.count === perLevel && (
                   <span className="flex items-center gap-1 text-success">
                     <CheckCircle2 className="size-4" /> {result.count} created
+                  </span>
+                )}
+                {result.status === "done" && result.count !== perLevel && (
+                  <span className="flex items-center gap-1 text-warning">
+                    <AlertTriangle className="size-4" /> {result.count} of {perLevel}{" "}
+                    created — the AI returned fewer than asked. You can add more by
+                    hand on the next screen, or try generating again.
                   </span>
                 )}
                 {result.status === "failed" && (

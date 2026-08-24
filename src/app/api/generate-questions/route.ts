@@ -94,12 +94,15 @@ export async function POST(request: Request) {
   let generated: ReturnType<typeof parseGeneratedQuestions> | undefined;
   let lastError: unknown;
 
-  // Try once, retry once more on any failure (bad JSON, network, etc.).
+  // Try once, retry once more if it fails (bad JSON, network, etc.) or if
+  // Gemini returned fewer questions than asked for. Keep whichever attempt
+  // produced the most questions.
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
       const result = await model.generateContent(prompt);
-      generated = parseGeneratedQuestions(result.response.text());
-      break;
+      const parsed = parseGeneratedQuestions(result.response.text());
+      if (!generated || parsed.length > generated.length) generated = parsed;
+      if (parsed.length >= questionCount) break;
     } catch (error) {
       lastError = error;
     }
@@ -154,7 +157,7 @@ export async function POST(request: Request) {
     );
   }
 
-  return NextResponse.json({ count: insertedQuestions.length });
+  return NextResponse.json({ count: insertedQuestions.length, requested: questionCount });
 }
 
 function describeGeminiError(error: unknown): string {
