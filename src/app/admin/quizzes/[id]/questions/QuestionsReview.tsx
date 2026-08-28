@@ -54,6 +54,8 @@ export function QuestionsReview({
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   const filters: QuestionFilters = useMemo(
     () => ({ difficulty, approval, search }),
@@ -63,6 +65,7 @@ export function QuestionsReview({
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
+    setLoadError(false);
     setSelected(new Set());
 
     const timer = setTimeout(() => {
@@ -72,7 +75,11 @@ export function QuestionsReview({
           setQuestions(result.questions as Question[]);
           setHasMore(result.hasMore);
         })
-        .catch(() => showToast("Could not load questions", "danger"))
+        .catch(() => {
+          if (cancelled) return;
+          setLoadError(true);
+          showToast("Could not load questions", "danger");
+        })
         .finally(() => {
           if (!cancelled) setLoading(false);
         });
@@ -83,7 +90,7 @@ export function QuestionsReview({
       clearTimeout(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [quizId, filters]);
+  }, [quizId, filters, reloadKey]);
 
   async function loadMore() {
     setLoadingMore(true);
@@ -144,7 +151,12 @@ export function QuestionsReview({
   }
 
   async function handleApprove(question: Question) {
-    await approveQuestion(question.id);
+    try {
+      await approveQuestion(quizId, question.id);
+    } catch {
+      showToast("Could not approve this question", "danger");
+      return;
+    }
     adjustSummary(question, { approved: true });
     setQuestions((current) =>
       current.map((item) => (item.id === question.id ? { ...item, is_approved: true } : item))
@@ -153,7 +165,12 @@ export function QuestionsReview({
   }
 
   async function handleDelete(question: Question) {
-    await deleteQuestion(question.id);
+    try {
+      await deleteQuestion(quizId, question.id);
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Could not delete this question", "danger");
+      return;
+    }
     adjustSummary(question, { removed: true });
     setQuestions((current) => current.filter((item) => item.id !== question.id));
     setSelected((current) => {
@@ -165,7 +182,12 @@ export function QuestionsReview({
   }
 
   async function handleSave(question: Question, input: Parameters<typeof updateQuestion>[1]) {
-    await updateQuestion(question.id, input);
+    try {
+      await updateQuestion(question.id, input);
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Could not save this question", "danger");
+      throw error; // let QuestionCard keep the edit form open
+    }
     setQuestions((current) =>
       current.map((item) =>
         item.id === question.id
@@ -192,7 +214,7 @@ export function QuestionsReview({
     setBulkBusy(true);
     try {
       const ids = [...selected];
-      await bulkApprove(ids);
+      await bulkApprove(quizId, ids);
       setQuestions((current) =>
         current.map((item) => (ids.includes(item.id) ? { ...item, is_approved: true } : item))
       );
@@ -228,7 +250,7 @@ export function QuestionsReview({
     setBulkBusy(true);
     try {
       const ids = [...selected];
-      await bulkDelete(ids);
+      await bulkDelete(quizId, ids);
       setSummary((current) => {
         let total = current.total;
         let approved = current.approved;
@@ -253,8 +275,11 @@ export function QuestionsReview({
       setSelected(new Set());
       setBulkDeleteConfirm(false);
       showToast(`${ids.length} question(s) deleted`, "success");
-    } catch {
-      showToast("Could not delete the selected questions", "danger");
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : "Could not delete the selected questions",
+        "danger"
+      );
     } finally {
       setBulkBusy(false);
     }
@@ -322,6 +347,17 @@ export function QuestionsReview({
         <div className="flex justify-center py-12">
           <LoadingSpinner label="Loading questions" />
         </div>
+      ) : loadError ? (
+        <EmptyState
+          icon={<Square className="size-10" />}
+          title="Could not load questions"
+          description="Something went wrong while loading this list."
+          action={
+            <Button size="sm" onClick={() => setReloadKey((key) => key + 1)}>
+              Try again
+            </Button>
+          }
+        />
       ) : questions.length === 0 ? (
         <EmptyState
           icon={<Square className="size-10" />}

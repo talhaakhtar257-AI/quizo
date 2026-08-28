@@ -22,7 +22,7 @@ export function ThemeToggle() {
   if (!mounted) {
     return (
       <div
-        className="h-10 w-32 rounded-md bg-surface-raised"
+        className="h-[52px] w-[152px] rounded-md bg-surface-raised"
         aria-hidden="true"
       />
     );
@@ -43,7 +43,7 @@ export function ThemeToggle() {
           aria-label={label}
           onClick={() => setTheme(value)}
           className={cn(
-            "flex size-8 items-center justify-center rounded-md text-fg-muted transition-colors",
+            "flex size-11 items-center justify-center rounded-md text-fg-muted transition-colors",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
             theme === value && "bg-primary-subtle text-primary"
           )}

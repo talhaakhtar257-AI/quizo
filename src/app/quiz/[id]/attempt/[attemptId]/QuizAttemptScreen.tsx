@@ -321,6 +321,23 @@ export function QuizAttemptScreen({
       <div className="flex flex-1 items-center justify-center p-4 sm:p-6">
         {phase === "loading" && connectionState !== "failed" && <LoadingSpinner label="Loading question" />}
 
+        {phase === "loading" && connectionState === "failed" && !question && (
+          <div className="max-w-sm rounded-xl border border-border bg-surface p-6 text-center shadow-lg">
+            <p className="mb-4 text-sm font-medium text-fg">
+              We could not reach the server. Check your internet connection and try again — your
+              attempt is safe.
+            </p>
+            <Button
+              onClick={() => {
+                setConnectionState("ok");
+                loadNextQuestion();
+              }}
+            >
+              Retry
+            </Button>
+          </div>
+        )}
+
         {question && (phase === "question" || phase === "advancing") && (
           <div className="w-full max-w-2xl space-y-6">
             <DifficultyIndicator difficulty={question.difficulty} />

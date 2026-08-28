@@ -125,7 +125,7 @@ export function OutlineList({
                   disabled={index === 0 || isPending}
                   onClick={() => handleMove(topic.id, "up")}
                   aria-label={`Move ${topic.topic_title} up`}
-                  className="flex size-9 items-center justify-center rounded-md text-fg-secondary hover:bg-surface-raised hover:text-fg disabled:opacity-30"
+                  className="flex size-11 items-center justify-center rounded-md text-fg-secondary hover:bg-surface-raised hover:text-fg disabled:opacity-30"
                 >
                   <ArrowUp className="size-4" />
                 </button>
@@ -134,7 +134,7 @@ export function OutlineList({
                   disabled={index === topics.length - 1 || isPending}
                   onClick={() => handleMove(topic.id, "down")}
                   aria-label={`Move ${topic.topic_title} down`}
-                  className="flex size-9 items-center justify-center rounded-md text-fg-secondary hover:bg-surface-raised hover:text-fg disabled:opacity-30"
+                  className="flex size-11 items-center justify-center rounded-md text-fg-secondary hover:bg-surface-raised hover:text-fg disabled:opacity-30"
                 >
                   <ArrowDown className="size-4" />
                 </button>
@@ -142,7 +142,7 @@ export function OutlineList({
                   type="button"
                   onClick={() => openEdit(topic)}
                   aria-label={`Edit ${topic.topic_title}`}
-                  className="flex size-9 items-center justify-center rounded-md text-fg-secondary hover:bg-surface-raised hover:text-fg"
+                  className="flex size-11 items-center justify-center rounded-md text-fg-secondary hover:bg-surface-raised hover:text-fg"
                 >
                   <Pencil className="size-4" />
                 </button>
@@ -150,7 +150,7 @@ export function OutlineList({
                   type="button"
                   onClick={() => setDeleteTarget(topic)}
                   aria-label={`Delete ${topic.topic_title}`}
-                  className="flex size-9 items-center justify-center rounded-md text-fg-secondary hover:bg-danger-bg hover:text-danger"
+                  className="flex size-11 items-center justify-center rounded-md text-fg-secondary hover:bg-danger-bg hover:text-danger"
                 >
                   <Trash2 className="size-4" />
                 </button>

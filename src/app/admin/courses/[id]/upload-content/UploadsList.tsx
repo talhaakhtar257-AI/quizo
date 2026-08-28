@@ -75,7 +75,7 @@ export function UploadsList({
               type="button"
               onClick={() => setDeleteTarget(upload)}
               aria-label="Delete upload"
-              className="flex size-9 shrink-0 items-center justify-center rounded-md text-fg-secondary hover:bg-danger-bg hover:text-danger"
+              className="flex size-11 shrink-0 items-center justify-center rounded-md text-fg-secondary hover:bg-danger-bg hover:text-danger"
             >
               <Trash2 className="size-4" />
             </button>

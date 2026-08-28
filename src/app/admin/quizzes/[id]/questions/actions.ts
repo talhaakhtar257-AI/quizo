@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/require-admin";
 import type { Enums } from "@/types/database";
 
 export interface QuestionFilters {
@@ -11,6 +12,42 @@ export interface QuestionFilters {
 }
 
 const PAGE_SIZE = 20;
+
+// Shared by createManualQuestion and updateQuestion: the client form already
+// enforces this (NewQuestionForm.tsx), but a Server Action is directly
+// POST-able independent of the form that rendered it, so a malformed
+// question must never be able to reach the database — especially since a
+// manually-written question is auto-approved on creation and can be served
+// to a real student immediately, with no review gate.
+function validateQuestionInput(input: {
+  questionType: Enums<"question_type">;
+  scenarioText: string;
+  questionText: string;
+  options: { text: string; isCorrect: boolean }[];
+}): string | null {
+  if (input.questionText.trim().length < 10) {
+    return "Question text must be at least 10 characters.";
+  }
+  if (input.questionType === "scenario" && !input.scenarioText.trim()) {
+    return "Scenario text is required for a scenario question.";
+  }
+  if (input.options.length !== 4) {
+    return "A question must have exactly 4 options.";
+  }
+  const trimmed = input.options.map((option) => option.text.trim());
+  if (trimmed.some((text) => !text)) {
+    return "All 4 options must be filled in.";
+  }
+  const lower = trimmed.map((text) => text.toLowerCase());
+  if (new Set(lower).size !== lower.length) {
+    return "Options must not be duplicates of each other.";
+  }
+  const correctCount = input.options.filter((option) => option.isCorrect).length;
+  if (correctCount !== 1) {
+    return "Exactly one option must be marked correct.";
+  }
+  return null;
+}
 
 export async function fetchQuestions(
   quizId: string,
@@ -49,34 +86,60 @@ export async function fetchQuestions(
   return { questions: hasMore ? rows.slice(0, PAGE_SIZE) : rows, hasMore };
 }
 
-export async function approveQuestion(questionId: string) {
-  const supabase = await createClient();
+export async function approveQuestion(quizId: string, questionId: string) {
+  const supabase = await requireAdmin();
+  const { data, error } = await supabase
+    .from("questions")
+    .update({ is_approved: true })
+    .eq("id", questionId)
+    .eq("quiz_id", quizId)
+    .select("id");
+  if (error) throw new Error(error.message);
+  if (!data || data.length === 0) throw new Error("Question not found in this quiz.");
+}
+
+export async function deleteQuestion(quizId: string, questionId: string) {
+  const supabase = await requireAdmin();
+  const { data, error } = await supabase
+    .from("questions")
+    .delete()
+    .eq("id", questionId)
+    .eq("quiz_id", quizId)
+    .select("id");
+  if (error) {
+    if (error.code === "23503") {
+      throw new Error("This question has already been answered by a student and can't be deleted.");
+    }
+    throw new Error(error.message);
+  }
+  if (!data || data.length === 0) throw new Error("Question not found in this quiz.");
+}
+
+export async function bulkApprove(quizId: string, ids: string[]) {
+  const supabase = await requireAdmin();
   const { error } = await supabase
     .from("questions")
     .update({ is_approved: true })
-    .eq("id", questionId);
+    .in("id", ids)
+    .eq("quiz_id", quizId);
   if (error) throw new Error(error.message);
 }
 
-export async function deleteQuestion(questionId: string) {
-  const supabase = await createClient();
-  const { error } = await supabase.from("questions").delete().eq("id", questionId);
-  if (error) throw new Error(error.message);
-}
-
-export async function bulkApprove(ids: string[]) {
-  const supabase = await createClient();
+export async function bulkDelete(quizId: string, ids: string[]) {
+  const supabase = await requireAdmin();
   const { error } = await supabase
     .from("questions")
-    .update({ is_approved: true })
-    .in("id", ids);
-  if (error) throw new Error(error.message);
-}
-
-export async function bulkDelete(ids: string[]) {
-  const supabase = await createClient();
-  const { error } = await supabase.from("questions").delete().in("id", ids);
-  if (error) throw new Error(error.message);
+    .delete()
+    .in("id", ids)
+    .eq("quiz_id", quizId);
+  if (error) {
+    if (error.code === "23503") {
+      throw new Error(
+        "One or more of these questions have already been answered by a student and can't be deleted."
+      );
+    }
+    throw new Error(error.message);
+  }
 }
 
 export interface UpdateQuestionInput {
@@ -88,7 +151,18 @@ export interface UpdateQuestionInput {
 }
 
 export async function updateQuestion(questionId: string, input: UpdateQuestionInput) {
-  const supabase = await createClient();
+  const supabase = await requireAdmin();
+
+  // Existing questions can be scenario or direct-question type; scenario
+  // text is only required when the question already has one. Re-derive the
+  // effective type the same way the shared validator expects it.
+  const validationError = validateQuestionInput({
+    questionType: input.scenarioText.trim() ? "scenario" : "mcq",
+    scenarioText: input.scenarioText,
+    questionText: input.questionText,
+    options: input.options,
+  });
+  if (validationError) throw new Error(validationError);
 
   const { error: questionError } = await supabase
     .from("questions")
@@ -120,7 +194,10 @@ export interface CreateManualQuestionInput {
 }
 
 export async function createManualQuestion(quizId: string, input: CreateManualQuestionInput) {
-  const supabase = await createClient();
+  const supabase = await requireAdmin();
+
+  const validationError = validateQuestionInput(input);
+  if (validationError) throw new Error(validationError);
 
   const { data: question, error: questionError } = await supabase
     .from("questions")

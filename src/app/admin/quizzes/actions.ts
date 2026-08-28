@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/require-admin";
 import type { Enums } from "@/types/database";
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
@@ -70,7 +71,7 @@ async function assertPublishable(
 }
 
 export async function createQuiz(input: QuizInput) {
-  const supabase = await createClient();
+  const supabase = await requireAdmin();
 
   if (input.isPublished) {
     await assertPublishable(supabase, null, input.questionsToShow, input.difficultyMode);
@@ -103,7 +104,7 @@ export async function createQuiz(input: QuizInput) {
 }
 
 export async function updateQuiz(quizId: string, input: QuizInput) {
-  const supabase = await createClient();
+  const supabase = await requireAdmin();
 
   if (input.isPublished) {
     await assertPublishable(supabase, quizId, input.questionsToShow, input.difficultyMode);
@@ -130,7 +131,7 @@ export async function updateQuiz(quizId: string, input: QuizInput) {
 }
 
 export async function getQuizDeleteImpact(quizId: string) {
-  const supabase = await createClient();
+  const supabase = await requireAdmin();
 
   const { count: questionCount } = await supabase
     .from("questions")
@@ -155,7 +156,7 @@ export async function getQuizDeleteImpact(quizId: string) {
 }
 
 export async function deleteQuiz(quizId: string) {
-  const supabase = await createClient();
+  const supabase = await requireAdmin();
   const { error } = await supabase.from("quizzes").delete().eq("id", quizId);
   if (error) throw new Error(error.message);
   revalidatePath("/admin/quizzes");

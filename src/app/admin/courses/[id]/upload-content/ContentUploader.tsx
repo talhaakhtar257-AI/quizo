@@ -31,6 +31,22 @@ interface StagedImage {
   previewUrl: string;
 }
 
+// Heuristic only: file.text() always decodes as UTF-8, so a file that isn't
+// really UTF-8 text doesn't throw — it comes back full of replacement
+// characters (U+FFFD) or stray control characters instead. A real document
+// shouldn't have more than a tiny fraction of either.
+function looksLikeGarbledText(text: string): boolean {
+  if (!text) return false;
+  const sample = text.slice(0, 2000);
+  let badChars = 0;
+  for (const char of sample) {
+    const code = char.codePointAt(0) ?? 0;
+    const isControl = code < 32 && char !== "\n" && char !== "\r" && char !== "\t";
+    if (char === "�" || isControl) badChars += 1;
+  }
+  return badChars / sample.length > 0.02;
+}
+
 export function ContentUploader({ courseId }: { courseId: string }) {
   const router = useRouter();
   const { showToast } = useToast();
@@ -134,13 +150,21 @@ export function ContentUploader({ courseId }: { courseId: string }) {
 
   async function loadTextFile(file: File) {
     const lowerName = file.name.toLowerCase();
-    const isPdf = lowerName.endsWith(".pdf");
+    const extensionSaysPdf = lowerName.endsWith(".pdf");
     const hasAcceptedExtension =
-      isPdf || ACCEPTED_TEXT_EXTENSIONS.some((extension) => lowerName.endsWith(extension));
+      extensionSaysPdf || ACCEPTED_TEXT_EXTENSIONS.some((extension) => lowerName.endsWith(extension));
     if (!hasAcceptedExtension) {
       showToast(`${file.name} is not a .txt, .md, or .pdf file`, "warning");
       return;
     }
+
+    // Trust the file's own magic bytes over its extension — a renamed file
+    // (a PDF saved as .txt, or vice versa) would otherwise be read through
+    // the wrong path and silently save garbled/binary content.
+    const header = new Uint8Array(await file.slice(0, 5).arrayBuffer());
+    const contentIsPdf = String.fromCharCode(...header) === "%PDF-";
+    const isPdf = contentIsPdf || extensionSaysPdf;
+
     const maxSize = isPdf ? MAX_PDF_FILE_SIZE : MAX_TEXT_FILE_SIZE;
     if (file.size > maxSize) {
       showToast(`${file.name} is over ${isPdf ? "10MB" : "2MB"}`, "warning");
@@ -154,6 +178,14 @@ export function ContentUploader({ courseId }: { courseId: string }) {
       if (isPdf && text.trim().length < 20) {
         setFileReadError(
           "We could not find text in this PDF. It may be a scanned document — try the Upload Image tab instead, or paste the text directly."
+        );
+      } else if (!isPdf && looksLikeGarbledText(text)) {
+        // file.text() always decodes as UTF-8; a file that isn't real UTF-8
+        // text (a mislabeled binary file, or a different text encoding)
+        // comes back full of replacement/control characters instead of an
+        // error, so this is the only signal we get.
+        setFileReadError(
+          "This file doesn't look like readable text — it may not be a plain UTF-8 text file. Try opening it and pasting the text instead."
         );
       }
       setFileText(text);
@@ -385,7 +417,7 @@ export function ContentUploader({ courseId }: { courseId: string }) {
           </div>
 
           {images.length > 0 && (
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-4 pt-1">
               {images.map((image, index) => (
                 <div key={image.previewUrl} className="relative">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -398,9 +430,9 @@ export function ContentUploader({ courseId }: { courseId: string }) {
                     type="button"
                     onClick={() => removeImage(index)}
                     aria-label={`Remove ${image.file.name}`}
-                    className="absolute -top-2 -right-2 flex size-6 items-center justify-center rounded-full bg-danger text-white hover:opacity-90"
+                    className="absolute -top-2.5 -right-2.5 flex size-8 items-center justify-center rounded-full bg-danger text-white hover:opacity-90"
                   >
-                    <X className="size-3.5" />
+                    <X className="size-4" />
                   </button>
                 </div>
               ))}

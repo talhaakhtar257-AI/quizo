@@ -68,7 +68,7 @@ export function AdminShell({
             type="button"
             onClick={() => setMobileOpen(false)}
             aria-label="Close menu"
-            className="flex size-9 items-center justify-center rounded-md text-fg-secondary hover:bg-surface-raised lg:hidden"
+            className="flex size-11 items-center justify-center rounded-md text-fg-secondary hover:bg-surface-raised lg:hidden"
           >
             <X className="size-5" />
           </button>

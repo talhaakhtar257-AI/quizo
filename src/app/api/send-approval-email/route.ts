@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
-import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/require-admin";
 
 interface RequestBody {
   email?: string;
@@ -8,23 +8,11 @@ interface RequestBody {
 }
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json({ error: "You must be logged in." }, { status: 401 });
-  }
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role, status")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (!profile || profile.role !== "admin" || profile.status !== "active") {
-    return NextResponse.json({ error: "Admin access required." }, { status: 403 });
+  try {
+    await requireAdmin();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Admin access required.";
+    return NextResponse.json({ error: message }, { status: message.includes("logged in") ? 401 : 403 });
   }
 
   let body: RequestBody;

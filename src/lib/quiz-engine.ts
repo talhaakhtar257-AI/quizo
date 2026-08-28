@@ -33,6 +33,16 @@ export function requiredLevels(mode: DifficultyMode): Difficulty[] {
   return mode === "adaptive" ? ["easy", "medium", "hard"] : [mode.replace("_only", "") as Difficulty];
 }
 
+// An adaptive attempt always starts at Easy. A locked mode (easy_only /
+// medium_only / hard_only) must start — and, per nextDifficulty() above,
+// stay — at its one allowed level; starting it at "easy" regardless of mode
+// would send medium_only/hard_only attempts straight into
+// fallbackOrder("easy") = [easy, medium], which never even tries "hard",
+// ending a hard_only attempt before it serves a single question.
+export function initialDifficulty(mode: DifficultyMode): Difficulty {
+  return mode === "adaptive" ? "easy" : (mode.replace("_only", "") as Difficulty);
+}
+
 export function levelLabel(level: Difficulty): string {
   return level[0].toUpperCase() + level.slice(1);
 }

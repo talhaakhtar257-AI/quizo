@@ -85,17 +85,33 @@ export async function POST(request: Request) {
     question_order: newQuestionsAnswered,
   });
   if (insertError) {
+    // A unique-violation here means a concurrent request already answered
+    // this exact question first (the check above raced it) — the answer is
+    // safely saved, just not by this request.
+    if (insertError.code === "23505") {
+      return NextResponse.json({ error: "This question has already been answered." }, { status: 409 });
+    }
     return NextResponse.json({ error: "Could not save your answer. Please try again." }, { status: 500 });
   }
 
-  await supabase
+  // Guarded on status so a concurrent finalize (heartbeat hitting time-expiry,
+  // or another request completing the quiz) between our read above and here
+  // can't un-freeze an already-submitted attempt's difficulty/progress —
+  // rule 6 says a submitted attempt is immutable.
+  const { data: updatedRows } = await supabase
     .from("attempts")
     .update({
       current_difficulty: newDifficulty,
       questions_answered: newQuestionsAnswered,
       time_remaining_seconds: secondsRemaining,
     })
-    .eq("id", attemptId);
+    .eq("id", attemptId)
+    .eq("status", "in_progress")
+    .select("id");
+
+  if (!updatedRows || updatedRows.length === 0) {
+    return NextResponse.json({ error: "This attempt has already been submitted." }, { status: 409 });
+  }
 
   const continueQuiz = newQuestionsAnswered < quiz.questionsToShow && secondsRemaining > 0;
 

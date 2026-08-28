@@ -2,7 +2,7 @@
 
 import { getCurrentUser } from "@/lib/get-current-user";
 import { createServiceClient } from "@/lib/supabase/service";
-import { checkEligibility } from "@/lib/quiz-engine";
+import { checkEligibility, initialDifficulty } from "@/lib/quiz-engine";
 
 export async function startAttempt(
   quizId: string
@@ -23,7 +23,7 @@ export async function startAttempt(
       user_id: currentUser.id,
       attempt_number: eligibility.attemptsUsed + 1,
       status: "in_progress",
-      current_difficulty: "easy",
+      current_difficulty: initialDifficulty(eligibility.quiz.difficultyMode),
       time_remaining_seconds: eligibility.quiz.timerMinutes * 60,
       total_questions: eligibility.quiz.questionsToShow,
       questions_answered: 0,

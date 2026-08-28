@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/require-admin";
 
 export interface CreateQuizForGenerationInput {
   courseId: string;
@@ -9,7 +9,7 @@ export interface CreateQuizForGenerationInput {
 }
 
 export async function createQuizForGeneration(input: CreateQuizForGenerationInput) {
-  const supabase = await createClient();
+  const supabase = await requireAdmin();
   const {
     data: { user },
   } = await supabase.auth.getUser();

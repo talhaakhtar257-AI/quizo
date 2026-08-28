@@ -310,7 +310,7 @@ export function AttemptsTable({
                   <Link
                     href={`/admin/attempts/${row.id}`}
                     aria-label={`View attempt by ${row.studentName}`}
-                    className="flex size-9 items-center justify-center rounded-md text-fg-secondary hover:bg-surface-raised hover:text-fg"
+                    className="flex size-11 items-center justify-center rounded-md text-fg-secondary hover:bg-surface-raised hover:text-fg"
                   >
                     <Eye className="size-4" />
                   </Link>

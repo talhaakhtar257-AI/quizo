@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/require-admin";
 
 export interface TopicInput {
   title: string;
@@ -9,7 +9,7 @@ export interface TopicInput {
 }
 
 export async function addTopic(courseId: string, input: TopicInput) {
-  const supabase = await createClient();
+  const supabase = await requireAdmin();
   const { data: existing } = await supabase
     .from("course_outlines")
     .select("topic_order")
@@ -35,7 +35,7 @@ export async function updateTopic(
   topicId: string,
   input: TopicInput
 ) {
-  const supabase = await createClient();
+  const supabase = await requireAdmin();
   const { error } = await supabase
     .from("course_outlines")
     .update({
@@ -49,7 +49,7 @@ export async function updateTopic(
 }
 
 export async function deleteTopic(courseId: string, topicId: string) {
-  const supabase = await createClient();
+  const supabase = await requireAdmin();
   const { error } = await supabase
     .from("course_outlines")
     .delete()
@@ -64,7 +64,7 @@ export async function moveTopic(
   topicId: string,
   direction: "up" | "down"
 ) {
-  const supabase = await createClient();
+  const supabase = await requireAdmin();
   const { data: topics } = await supabase
     .from("course_outlines")
     .select("id, topic_order")

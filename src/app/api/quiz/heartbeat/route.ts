@@ -43,6 +43,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ done: true, reason: "time_expired" });
   }
 
-  await supabase.from("attempts").update({ time_remaining_seconds: secondsRemaining }).eq("id", attemptId);
+  // Guarded on status: without it, a heartbeat racing a concurrent finalize
+  // (another heartbeat hitting expiry, or the quiz completing via
+  // submit-answer/next-question) could write a nonzero time back onto a row
+  // finalizeAttempt already froze at 0 for a submitted attempt.
+  await supabase
+    .from("attempts")
+    .update({ time_remaining_seconds: secondsRemaining })
+    .eq("id", attemptId)
+    .eq("status", "in_progress");
   return NextResponse.json({ done: false, secondsRemaining });
 }

@@ -34,6 +34,8 @@ export function CoursesTable({ rows }: { rows: CourseRow[] }) {
   const [impact, setImpact] = useState<{
     quizCount: number;
     questionCount: number;
+    attemptCount: number;
+    certificateCount: number;
   } | null>(null);
   const [loadingImpact, setLoadingImpact] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -125,7 +127,7 @@ export function CoursesTable({ rows }: { rows: CourseRow[] }) {
                   <Link
                     href={`/admin/courses/${row.id}/edit`}
                     aria-label={`Edit ${row.title}`}
-                    className="flex size-9 items-center justify-center rounded-md text-fg-secondary hover:bg-surface-raised hover:text-fg"
+                    className="flex size-11 items-center justify-center rounded-md text-fg-secondary hover:bg-surface-raised hover:text-fg"
                   >
                     <Pencil className="size-4" />
                   </Link>
@@ -133,7 +135,7 @@ export function CoursesTable({ rows }: { rows: CourseRow[] }) {
                     type="button"
                     aria-label={`Delete ${row.title}`}
                     onClick={() => openDeleteModal(row)}
-                    className="flex size-9 items-center justify-center rounded-md text-fg-secondary hover:bg-danger-bg hover:text-danger"
+                    className="flex size-11 items-center justify-center rounded-md text-fg-secondary hover:bg-danger-bg hover:text-danger"
                   >
                     <Trash2 className="size-4" />
                   </button>
@@ -161,7 +163,11 @@ export function CoursesTable({ rows }: { rows: CourseRow[] }) {
           <p className="text-sm text-fg-secondary">
             This will permanently delete this course, all {impact?.quizCount ?? 0}{" "}
             quiz(zes) in it, and all {impact?.questionCount ?? 0} question(s) in
-            those quizzes. This cannot be undone.
+            those quizzes{(impact?.attemptCount ?? 0) > 0 &&
+              `, ${impact?.attemptCount} student attempt(s)`}
+            {(impact?.certificateCount ?? 0) > 0 &&
+              `, and ${impact?.certificateCount} issued certificate(s)`}
+            . This cannot be undone.
           </p>
         )}
         <div className="mt-6 flex justify-end gap-3">

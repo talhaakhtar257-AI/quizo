@@ -190,21 +190,21 @@ export function QuizzesTable({ rows, courses }: { rows: QuizRow[]; courses: Cour
                   <Link
                     href={`/admin/quizzes/${row.id}/questions`}
                     aria-label={`Manage questions for ${row.title}`}
-                    className="flex size-9 items-center justify-center rounded-md text-fg-secondary hover:bg-surface-raised hover:text-fg"
+                    className="flex size-11 items-center justify-center rounded-md text-fg-secondary hover:bg-surface-raised hover:text-fg"
                   >
                     <ListChecks className="size-4" />
                   </Link>
                   <Link
                     href={`/admin/quizzes/${row.id}/settings`}
                     aria-label={`Edit settings for ${row.title}`}
-                    className="flex size-9 items-center justify-center rounded-md text-fg-secondary hover:bg-surface-raised hover:text-fg"
+                    className="flex size-11 items-center justify-center rounded-md text-fg-secondary hover:bg-surface-raised hover:text-fg"
                   >
                     <Pencil className="size-4" />
                   </Link>
                   <Link
                     href={`/admin/quizzes/${row.id}/assign`}
                     aria-label={`Assign ${row.title}`}
-                    className="flex size-9 items-center justify-center rounded-md text-fg-secondary hover:bg-surface-raised hover:text-fg"
+                    className="flex size-11 items-center justify-center rounded-md text-fg-secondary hover:bg-surface-raised hover:text-fg"
                   >
                     <UserPlus className="size-4" />
                   </Link>
@@ -212,7 +212,7 @@ export function QuizzesTable({ rows, courses }: { rows: QuizRow[]; courses: Cour
                     type="button"
                     aria-label={`Delete ${row.title}`}
                     onClick={() => openDeleteModal(row)}
-                    className="flex size-9 items-center justify-center rounded-md text-fg-secondary hover:bg-danger-bg hover:text-danger"
+                    className="flex size-11 items-center justify-center rounded-md text-fg-secondary hover:bg-danger-bg hover:text-danger"
                   >
                     <Trash2 className="size-4" />
                   </button>
