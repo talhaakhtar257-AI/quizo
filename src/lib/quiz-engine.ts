@@ -118,7 +118,10 @@ export async function finalizeAttempt(
 
   const score = (answers ?? []).filter((answer) => answer.is_correct).length;
   const totalQuestions = answers?.length ?? 0;
-  const percentage = totalQuestions > 0 ? Math.round((score / totalQuestions) * 1000) / 10 : 0;
+  // Clamped defensively even though score/totalQuestions is already bounded
+  // to [0,1] here — the database also enforces this with a CHECK constraint.
+  const percentage =
+    totalQuestions > 0 ? Math.min(100, Math.round((score / totalQuestions) * 1000) / 10) : 0;
   const passingPercent = attempt.quizzes?.passing_percent ?? 70;
   const passed = percentage >= passingPercent;
 

@@ -9,7 +9,7 @@ import {
   ListChecks,
   ClipboardCheck,
   Users,
-  BarChart3,
+  ChartColumnBig,
   Menu,
   X,
   LogOut,
@@ -24,7 +24,7 @@ const NAV_ITEMS = [
   { href: "/admin/quizzes", label: "Quizzes", icon: ListChecks },
   { href: "/admin/attempts", label: "Attempts", icon: ClipboardCheck },
   { href: "/admin/users", label: "Users", icon: Users },
-  { href: "/admin/reports", label: "Reports", icon: BarChart3 },
+  { href: "/admin/reports", label: "Reports", icon: ChartColumnBig },
 ];
 
 export function AdminShell({

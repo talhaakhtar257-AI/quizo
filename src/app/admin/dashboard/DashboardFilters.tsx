@@ -50,7 +50,7 @@ export function DashboardFilters({
           type="date"
           value={from}
           onChange={(event) => navigate({ from: event.target.value })}
-          className="h-11 rounded-md border border-border bg-surface px-3 text-sm text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          className="h-11 rounded-md border border-border bg-surface px-3 text-sm text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary [&::-webkit-calendar-picker-indicator]:ml-2"
         />
       </div>
 
@@ -60,7 +60,7 @@ export function DashboardFilters({
           type="date"
           value={to}
           onChange={(event) => navigate({ to: event.target.value })}
-          className="h-11 rounded-md border border-border bg-surface px-3 text-sm text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          className="h-11 rounded-md border border-border bg-surface px-3 text-sm text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary [&::-webkit-calendar-picker-indicator]:ml-2"
         />
       </div>
 

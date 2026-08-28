@@ -597,6 +597,7 @@ export type Database = {
           difficulty: string
           question_id: string
           question_text: string
+          quiz_id: string
           quiz_title: string
           times_shown: number
           times_wrong: number

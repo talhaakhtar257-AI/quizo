@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { AlertTriangle } from "lucide-react";
 import { Badge, EmptyState, Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/components/ui";
 import { levelLabel, type Difficulty } from "@/lib/quiz-engine";
@@ -5,6 +6,7 @@ import { levelLabel, type Difficulty } from "@/lib/quiz-engine";
 export interface WeakQuestionRow {
   questionId: string;
   questionText: string;
+  quizId: string;
   quizTitle: string;
   difficulty: Difficulty;
   timesShown: number;
@@ -12,11 +14,17 @@ export interface WeakQuestionRow {
   wrongPercent: number;
 }
 
-function shorten(text: string, max = 80) {
-  return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text;
-}
+const WEAK_THRESHOLD = 70;
 
-export function WeakQuestionsTable({ rows }: { rows: WeakQuestionRow[] }) {
+export function WeakQuestionsTable({
+  rows,
+  filteredQuizTitle,
+}: {
+  rows: WeakQuestionRow[];
+  /** Set when the dashboard's own Quiz filter is pinned to one quiz — shown as a sub-header
+   * instead of repeating the same quiz name down every row of the table. */
+  filteredQuizTitle?: string | null;
+}) {
   if (rows.length === 0) {
     return (
       <EmptyState
@@ -33,11 +41,14 @@ export function WeakQuestionsTable({ rows }: { rows: WeakQuestionRow[] }) {
         A question wrong more than 70% of the time may be unclear or may have the wrong answer marked. Review
         these.
       </p>
+      {filteredQuizTitle && (
+        <p className="text-xs font-medium text-fg-secondary">Quiz: {filteredQuizTitle}</p>
+      )}
       <Table>
         <TableHead>
           <TableRow>
             <TableHeaderCell>Question</TableHeaderCell>
-            <TableHeaderCell>Quiz</TableHeaderCell>
+            {!filteredQuizTitle && <TableHeaderCell>Quiz</TableHeaderCell>}
             <TableHeaderCell>Difficulty</TableHeaderCell>
             <TableHeaderCell>Shown</TableHeaderCell>
             <TableHeaderCell>Wrong</TableHeaderCell>
@@ -47,13 +58,24 @@ export function WeakQuestionsTable({ rows }: { rows: WeakQuestionRow[] }) {
         <TableBody>
           {rows.map((row) => (
             <TableRow key={row.questionId}>
-              <TableCell className="max-w-xs">{shorten(row.questionText)}</TableCell>
-              <TableCell>{row.quizTitle}</TableCell>
+              <TableCell className="max-w-md whitespace-normal">
+                <Link
+                  href={`/admin/quizzes/${row.quizId}/questions`}
+                  className="text-primary hover:underline"
+                >
+                  {row.questionText}
+                </Link>
+              </TableCell>
+              {!filteredQuizTitle && <TableCell>{row.quizTitle}</TableCell>}
               <TableCell>{levelLabel(row.difficulty)}</TableCell>
               <TableCell>{row.timesShown}</TableCell>
               <TableCell>{row.timesWrong}</TableCell>
               <TableCell>
-                <Badge variant={row.wrongPercent > 70 ? "danger" : "neutral"}>{row.wrongPercent}%</Badge>
+                {row.wrongPercent > WEAK_THRESHOLD ? (
+                  <Badge variant="danger">{row.wrongPercent}%</Badge>
+                ) : (
+                  <span className="text-fg-secondary">{row.wrongPercent}%</span>
+                )}
               </TableCell>
             </TableRow>
           ))}

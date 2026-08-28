@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookOpen, ClipboardList, Clock, ListChecks, Target, Users } from "lucide-react";
+import { BookOpen, ChevronRight, ClipboardList, Clock, ListChecks, Target, Users } from "lucide-react";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 
@@ -83,14 +83,21 @@ export default async function AdminDashboardPage({
   const overallPassRate =
     submittedCount && submittedCount > 0 ? Math.round(((passedCount ?? 0) / submittedCount) * 100) : null;
 
-  const statCards: { label: string; value: string | number; icon: typeof Users; href?: string }[] = [
-    { label: "Total Users", value: totalUsers ?? 0, icon: Users },
+  const statCards: { label: string; value: string | number; icon: typeof Users; href: string }[] = [
+    { label: "Total Users", value: totalUsers ?? 0, icon: Users, href: "/admin/users" },
     { label: "Pending Approvals", value: pendingApprovals ?? 0, icon: Clock, href: "/admin/users" },
-    { label: "Total Courses", value: totalCourses ?? 0, icon: BookOpen },
-    { label: "Total Quizzes", value: totalQuizzes ?? 0, icon: ListChecks },
-    { label: "Total Attempts", value: totalAttempts ?? 0, icon: ClipboardList },
-    { label: "Overall Pass Rate", value: overallPassRate !== null ? `${overallPassRate}%` : "—", icon: Target },
+    { label: "Total Courses", value: totalCourses ?? 0, icon: BookOpen, href: "/admin/courses" },
+    { label: "Total Quizzes", value: totalQuizzes ?? 0, icon: ListChecks, href: "/admin/quizzes" },
+    { label: "Total Attempts", value: totalAttempts ?? 0, icon: ClipboardList, href: "/admin/attempts" },
+    {
+      label: "Overall Pass Rate",
+      value: overallPassRate !== null ? `${overallPassRate}%` : "—",
+      icon: Target,
+      href: "/admin/reports",
+    },
   ];
+
+  const selectedQuizTitle = pQuiz ? (quizzesList ?? []).find((q) => q.id === pQuiz)?.title ?? null : null;
 
   const pf = passFail?.[0] ?? { passed_count: 0, failed_count: 0 };
 
@@ -111,26 +118,18 @@ export default async function AdminDashboardPage({
       />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-6">
-        {statCards.map(({ label, value, icon: Icon, href }) => {
-          const card = (
-            <Card
-              className={"space-y-2 p-4" + (href ? " transition-colors hover:bg-surface-raised" : "")}
-            >
+        {statCards.map(({ label, value, icon: Icon, href }) => (
+          <Link key={label} href={href}>
+            <Card className="relative space-y-2 p-5 transition-colors hover:bg-surface-raised">
+              <ChevronRight className="absolute right-3 top-3 size-4 text-fg-secondary" />
               <div className="flex items-center gap-2 text-fg-secondary">
                 <Icon className="size-4" />
                 <span className="text-xs font-medium">{label}</span>
               </div>
               <p className="text-2xl font-bold text-fg">{value}</p>
             </Card>
-          );
-          return href ? (
-            <Link key={label} href={href}>
-              {card}
-            </Link>
-          ) : (
-            <div key={label}>{card}</div>
-          );
-        })}
+          </Link>
+        ))}
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -165,12 +164,14 @@ export default async function AdminDashboardPage({
           rows={(weakQuestions ?? []).map((r) => ({
             questionId: r.question_id,
             questionText: r.question_text,
+            quizId: r.quiz_id,
             quizTitle: r.quiz_title,
             difficulty: r.difficulty as Difficulty,
             timesShown: r.times_shown,
             timesWrong: r.times_wrong,
             wrongPercent: r.wrong_percent,
           }))}
+          filteredQuizTitle={selectedQuizTitle}
         />
       </Card>
 

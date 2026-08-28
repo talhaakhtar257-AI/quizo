@@ -2,6 +2,8 @@ import Link from "next/link";
 import { Award, TrendingDown, Users } from "lucide-react";
 import { Badge, EmptyState } from "@/components/ui";
 
+const WEAK_THRESHOLD = 70;
+
 export interface StudentPerformanceRow {
   userId: string;
   fullName: string;
@@ -48,13 +50,20 @@ export function PerformersLists({ students }: { students: StudentPerformanceRow[
   }
 
   const topPerformers = [...students].sort((a, b) => b.avgPercentage - a.avgPercentage).slice(0, 5);
+  const topPerformerIds = new Set(topPerformers.map((student) => student.userId));
 
-  const needsAttention = [...students]
-    .sort((a, b) => {
-      const scoreA = a.latestPassed ? a.avgPercentage : a.avgPercentage - 1000;
-      const scoreB = b.latestPassed ? b.avgPercentage : b.avgPercentage - 1000;
-      return scoreA - scoreB;
-    })
+  // "Needs attention" means an actual risk signal — failed their most recent
+  // attempt, or sitting below the same 70% "weak" threshold used elsewhere —
+  // not just "didn't pass the latest one" regardless of how well they've
+  // otherwise been doing. Also excludes anyone already shown in Top
+  // Performers so nobody appears in both lists at once.
+  const needsAttention = students
+    .filter(
+      (student) =>
+        !topPerformerIds.has(student.userId) &&
+        (!student.latestPassed || student.avgPercentage < WEAK_THRESHOLD)
+    )
+    .sort((a, b) => a.avgPercentage - b.avgPercentage)
     .slice(0, 5);
 
   return (
@@ -74,9 +83,13 @@ export function PerformersLists({ students }: { students: StudentPerformanceRow[
           <TrendingDown className="size-4" /> Needs Attention
         </h3>
         <div className="space-y-1">
-          {needsAttention.map((student, i) => (
-            <StudentRow key={student.userId} student={student} rank={i + 1} />
-          ))}
+          {needsAttention.length === 0 ? (
+            <p className="px-3 py-2 text-sm text-fg-secondary">Nobody needs attention right now.</p>
+          ) : (
+            needsAttention.map((student, i) => (
+              <StudentRow key={student.userId} student={student} rank={i + 1} />
+            ))
+          )}
         </div>
       </div>
     </div>
