@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Award, CheckCircle2, ClipboardList, Download, TrendingUp } from "lucide-react";
+import { Award, CheckCircle2, ClipboardList, Clock, Download, TrendingUp, XCircle } from "lucide-react";
 import { getCurrentUser } from "@/lib/get-current-user";
 import { createClient } from "@/lib/supabase/server";
 import { Badge, Card, EmptyState, buttonVariants } from "@/components/ui";
@@ -30,6 +30,26 @@ export default async function DashboardPage() {
   const { data: attempts } = await supabase
     .from("quiz_attempts")
     .select("id, quiz_id, status, score, submitted_at, quizzes(title, passing_score)");
+
+  // docs/FEATURES.md promises a "waiting for approval" state for a student
+  // whose enrollment is still pending. It was never built, so a pending
+  // student saw an ordinary dashboard with empty lists and no idea their
+  // request was sitting unapproved — indistinguishable from an approved
+  // student in a course that simply has no quizzes yet.
+  const { data: myEnrollments } = await supabase
+    .from("enrollments")
+    .select("status, courses(name)")
+    .eq("student_id", currentUser.id);
+
+  const pendingCourses = (myEnrollments ?? [])
+    .filter((row) => row.status === "pending")
+    .map((row) => (row.courses as unknown as { name: string } | null)?.name)
+    .filter((name): name is string => Boolean(name));
+
+  const rejectedCourses = (myEnrollments ?? [])
+    .filter((row) => row.status === "rejected")
+    .map((row) => (row.courses as unknown as { name: string } | null)?.name)
+    .filter((name): name is string => Boolean(name));
 
   const { count: certificateCount } = await supabase
     .from("certificates")
@@ -98,6 +118,40 @@ export default async function DashboardPage() {
         <h1 className="text-2xl font-bold text-fg sm:text-3xl">Welcome back, {firstName}</h1>
         <p className="mt-1 text-sm text-fg-secondary">{formatDate(new Date())}</p>
       </div>
+
+      {pendingCourses.length > 0 && (
+        <Card className="border-warning/40 bg-warning-bg p-4">
+          <div className="flex items-start gap-3">
+            <Clock className="mt-0.5 size-5 shrink-0 text-warning" aria-hidden="true" />
+            <div>
+              <p className="text-sm font-semibold text-fg">Waiting for approval</p>
+              <p className="mt-1 text-sm text-fg-secondary">
+                Your request to join{" "}
+                <span className="font-medium text-fg">{pendingCourses.join(", ")}</span>{" "}
+                {pendingCourses.length === 1 ? "is" : "are"} waiting for your instructor to approve
+                it. Quizzes will appear here as soon as they do — you don&apos;t need to do anything
+                else.
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {rejectedCourses.length > 0 && (
+        <Card className="border-danger/40 bg-danger-bg p-4">
+          <div className="flex items-start gap-3">
+            <XCircle className="mt-0.5 size-5 shrink-0 text-danger" aria-hidden="true" />
+            <div>
+              <p className="text-sm font-semibold text-fg">Request not approved</p>
+              <p className="mt-1 text-sm text-fg-secondary">
+                Your request to join{" "}
+                <span className="font-medium text-fg">{rejectedCourses.join(", ")}</span> was not
+                approved. Contact your instructor if you think this is a mistake.
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {statCards.map(({ label, value, icon: Icon }) => (

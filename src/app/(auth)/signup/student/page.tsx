@@ -6,7 +6,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { isPasswordValid } from "@/lib/password";
 import { PasswordStrengthMeter } from "@/components/auth/PasswordStrengthMeter";
-import { Button, Card, Input } from "@/components/ui";
+import { CheckCircle2 } from "lucide-react";
+import { Button, Card, Input, buttonVariants } from "@/components/ui";
 
 // useSearchParams() opts the page out of static prerendering unless
 // wrapped in Suspense — Next.js fails the production build otherwise.
@@ -28,6 +29,7 @@ function StudentSignupForm() {
   const [inviteCode, setInviteCode] = useState(searchParams.get("code") ?? "");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -73,8 +75,30 @@ function StudentSignupForm() {
       return;
     }
 
+    // Tell them the request landed and is waiting. Previously they were
+    // dropped straight onto an empty dashboard with no mention of approval,
+    // so it looked as if joining had silently failed.
+    setSubmitted(true);
     router.push("/student");
     router.refresh();
+  }
+
+  if (submitted) {
+    return (
+      <Card className="p-6 text-center">
+        <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-success-bg">
+          <CheckCircle2 className="size-6 text-success" aria-hidden="true" />
+        </div>
+        <h1 className="mt-4 text-2xl font-semibold text-fg">Request sent</h1>
+        <p className="mt-2 text-sm text-fg-secondary">
+          Your account is ready. Your instructor needs to approve you before the course&apos;s
+          quizzes appear — you&apos;ll see them on your dashboard as soon as that happens.
+        </p>
+        <Link href="/student" className={buttonVariants({ className: "mt-6 w-full" })}>
+          Go to my dashboard
+        </Link>
+      </Card>
+    );
   }
 
   return (

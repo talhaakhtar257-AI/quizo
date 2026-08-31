@@ -40,7 +40,19 @@ export function StartQuizPanel({
     setLoading(true);
     setError(null);
 
-    const result = await startAttempt(quiz.id);
+    // Wrapped because a rejected Server Action (mobile network drop, cold
+    // start timeout) previously left `loading` stuck true forever — the
+    // spinner span and the student could never start their quiz without
+    // reloading the page, with no error shown.
+    let result: Awaited<ReturnType<typeof startAttempt>>;
+    try {
+      result = await startAttempt(quiz.id);
+    } catch {
+      setError("Could not start the quiz — check your connection and try again.");
+      setLoading(false);
+      return;
+    }
+
     if ("error" in result) {
       setError(result.error);
       setLoading(false);

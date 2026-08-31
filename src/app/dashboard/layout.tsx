@@ -5,6 +5,11 @@ import { createClient } from "@/lib/supabase/server";
 import { getPermissionFlags } from "@/lib/permissions";
 import { AdminShell } from "@/components/admin/AdminShell";
 
+// The pending-requests badge is computed here, and Next.js does not re-render
+// a layout on client-side navigation between sibling routes — so without this
+// the red count stayed stale until a full page reload.
+export const dynamic = "force-dynamic";
+
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const currentUser = await getCurrentUser();
 

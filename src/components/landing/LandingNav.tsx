@@ -5,10 +5,14 @@ import Link from "next/link";
 import { Sparkles, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui";
 
+// Root-relative fragments ("/#features"), never bare ones ("#features") —
+// this nav renders on /pricing, /privacy and /terms too, where those
+// sections don't exist, so a bare fragment silently does nothing. Footer.tsx
+// already had this right.
 const links = [
-  { href: "#features", label: "Features" },
+  { href: "/#features", label: "Features" },
   { href: "/pricing", label: "Pricing" },
-  { href: "#faq", label: "FAQ" },
+  { href: "/#faq", label: "FAQ" },
 ];
 
 // Sticky nav with a translucent blur backdrop per docs/LANDING-PAGE.md.

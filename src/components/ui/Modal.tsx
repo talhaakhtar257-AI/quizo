@@ -38,9 +38,13 @@ export function Modal({ open, onClose, title, children, className }: ModalProps)
         onClick={onClose}
         aria-hidden="true"
       />
+      {/* max-h + overflow keeps the action buttons reachable on a phone —
+          without them a tall confirm dialog pushes Delete/Cancel below the
+          viewport with no way to scroll to them, which reads as "the button
+          doesn't work". */}
       <div
         className={cn(
-          "relative w-full max-w-lg rounded-xl border border-border bg-surface p-6 shadow-lg dark:shadow-none",
+          "relative flex max-h-[85vh] w-full max-w-lg flex-col overflow-y-auto rounded-xl border border-border bg-surface p-6 shadow-lg dark:shadow-none",
           className
         )}
       >

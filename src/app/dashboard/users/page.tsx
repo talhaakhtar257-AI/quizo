@@ -11,6 +11,12 @@ import {
 
 export const metadata: Metadata = { title: "Students" };
 
+// A new enrollment request must show up on the admin's next visit, not after
+// a manual hard reload. Without this, an admin tab opened before a student
+// signed up kept showing "No pending requests" indefinitely — exactly the
+// "the student didn't appear" report.
+export const dynamic = "force-dynamic";
+
 export default async function StudentsPage() {
   const flags = await getPermissionFlags();
   if (!flags.view_students) redirect("/dashboard");

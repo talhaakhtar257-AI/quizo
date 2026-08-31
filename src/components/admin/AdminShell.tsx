@@ -14,8 +14,9 @@ import {
   Menu,
   X,
   LogOut,
+  Loader2,
 } from "lucide-react";
-import { ThemeToggle } from "@/components/ui";
+import { ThemeToggle, useToast } from "@/components/ui";
 import { signOut } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
@@ -44,6 +45,7 @@ export function AdminShell({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { showToast } = useToast();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const navItems = NAV_ITEMS.filter((item) => {
@@ -52,10 +54,21 @@ export function AdminShell({
     return true;
   });
 
+  // Guarded so a slow or failed sign-out doesn't look like a dead button:
+  // without this the icon silently did nothing on a bad connection and the
+  // user just kept tapping it.
+  const [loggingOut, setLoggingOut] = useState(false);
   async function handleLogout() {
-    await signOut();
-    router.push("/login");
-    router.refresh();
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try {
+      await signOut();
+      router.push("/login");
+      router.refresh();
+    } catch {
+      setLoggingOut(false);
+      showToast("Could not log out — check your connection and try again.", "danger");
+    }
   }
 
   return (
@@ -133,10 +146,15 @@ export function AdminShell({
             <button
               type="button"
               onClick={handleLogout}
+              disabled={loggingOut}
               aria-label="Log out"
-              className="flex size-10 items-center justify-center rounded-md text-fg-secondary hover:bg-surface-raised"
+              className="flex size-10 items-center justify-center rounded-md text-fg-secondary hover:bg-surface-raised disabled:opacity-60"
             >
-              <LogOut className="size-5" />
+              {loggingOut ? (
+                <Loader2 className="size-5 animate-spin" aria-hidden="true" />
+              ) : (
+                <LogOut className="size-5" />
+              )}
             </button>
           </div>
         </header>

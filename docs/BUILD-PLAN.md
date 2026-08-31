@@ -710,7 +710,7 @@ Talha's own control panel, separate from every academy's dashboard.
 
 ---
 
-## Phase Q — Polish + deploy 🟢🟡 (in progress — the two 🔵 steps are Talha's)
+## Phase Q — Polish + deploy ✅ 🟢🟡 (live and tested — only the phone check remains, Talha's)
 
 - [x] 🟢 404 (`not-found.tsx`) and 500 (`error.tsx`) pages already existed from an earlier phase,
       on-brand and reusing `EmptyState`. Spot-checked the newest, genuinely-unverified components
@@ -749,16 +749,33 @@ Talha's own control panel, separate from every academy's dashboard.
       `RESEND_API_KEY`, `ENCRYPTION_KEY`) is referenced from any `"use client"` file, and every
       `createServiceClient()` call site is server-only. `get_advisors` clean at the same pre-existing
       baseline as every earlier phase.
-- [ ] 🔵 **Your turn:** Create a Vercel project, import the GitHub repo, add the env vars — the
-      same 6 already in `.env.local` (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
-      `SUPABASE_SERVICE_ROLE_KEY`, `GEMINI_API_KEY`, `RESEND_API_KEY`, `ENCRYPTION_KEY`) plus
-      `PLATFORM_OWNER_EMAILS` — then deploy. `NEXT_PUBLIC_SITE_URL` is optional: leave it unset and
-      the OG image/sitemap/robots.txt correctly self-detect the live Vercel address automatically.
-- [ ] 🔵 **Your turn:** Once deployed, point Supabase's Auth → URL Configuration at the live Vercel
-      address (Site URL + Redirect URLs) — without this, login/signup will redirect back to
-      localhost from the deployed site.
-- [ ] 🟡 Full live journey on the **deployed** site, not localhost — I can drive this myself once
-      it's live, the same way every other phase's live test worked this session.
+- [x] 🔵 Talha created the Vercel project, added the env vars, and deployed; then pointed
+      Supabase's Auth → URL Configuration at the live address.
+- [x] 🟡 **Found and fixed a real deploy problem before it could hide anything else**: the live
+      site initially redirected every page to `/login`, including the public landing page. Root
+      cause wasn't a bug in the app at all — **none of this entire rebuild (Phases A–Q) had ever
+      been committed to git.** `main` was still sitting 3 days stale at the pre-rebuild v1 commit,
+      so Vercel had been building and deploying the *old single-academy app* the whole time; its
+      root page genuinely does redirect straight to a login/dashboard flow, which is exactly the
+      behavior that was observed. 201 files, committed and pushed to `main` with Talha's explicit
+      go-ahead (confirmed first, since this was a deploy-affecting push to the default branch);
+      Vercel auto-redeployed within about a minute and the real landing page came up correctly.
+- [x] 🟡 **Full live journey run end-to-end on the deployed site itself**, not localhost: signed up
+      a real (throwaway) academy, created a course, pasted study material, generated real AI
+      questions via a live Gemini call (the org's key inserted pre-encrypted directly into the
+      database with the same `encrypt()` the app itself uses — never typed into the Settings form,
+      same standing practice as Phase H), approved and published, signed up a student with the
+      real invite code, approved that enrollment as the admin, then drove the actual attempt via
+      the deployed API routes end-to-end — confirmed `is_correct`/`correct_option` never appear in
+      any response the same way they don't on localhost, confirmed the adaptive ladder climbed
+      easy → medium → hard exactly as designed, scored 100%, and a certificate issued and rendered
+      correctly on the public `/verify/[code]` page. One real automation-only snag along the way:
+      a property-descriptor-setter fill on the content-upload `<textarea>` silently failed to
+      update React's controlled state on this production build (character counter stayed at 0)
+      even though the DOM visibly showed the pasted text — switched to real simulated keystrokes for
+      that one field and it worked correctly; not a product bug, an artifact of the test technique.
+      All test data (org, course, quiz, questions, attempt, certificate, both accounts) deleted
+      from the live database afterward.
 - [ ] 🟡 Phone check over real mobile data, both themes — this one needs an actual phone, so it's
       yours to do (or tell me and I'll walk you through what to look for).
 

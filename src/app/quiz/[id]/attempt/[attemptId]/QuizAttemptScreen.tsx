@@ -345,8 +345,16 @@ export function QuizAttemptScreen({
       return;
     }
     if (result.json.error) {
+      // Previously swallowed in silence: the student tapped Next, the spinner
+      // blipped, and nothing happened with no explanation anywhere.
       setConnectionState("ok");
       setPhase("question");
+      showToast(
+        typeof result.json.error === "string"
+          ? result.json.error
+          : "That answer could not be saved. Please try again.",
+        "danger"
+      );
       return;
     }
     setConnectionState("ok");
@@ -445,6 +453,28 @@ export function QuizAttemptScreen({
 
         {question && (phase === "question" || phase === "advancing") && (
           <div className="w-full max-w-2xl space-y-6">
+            {/* Without this, a single failed request disabled every option AND
+                the Next button while the only retry UI stayed hidden (it was
+                gated on there being no question at all) — the whole screen
+                went dead with nothing on it explaining why. */}
+            {connectionState === "failed" && (
+              <div className="rounded-lg border border-warning/40 bg-warning-bg p-4">
+                <p className="text-sm font-medium text-fg">
+                  Connection lost. Your attempt is safe — reconnect and continue.
+                </p>
+                <Button
+                  size="sm"
+                  className="mt-3"
+                  onClick={() => {
+                    setConnectionState("ok");
+                    setPhase("question");
+                  }}
+                >
+                  Try again
+                </Button>
+              </div>
+            )}
+
             <DifficultyIndicator difficulty={question.difficulty} />
 
             <p className="text-xl font-semibold text-fg">{question.questionText}</p>
@@ -454,7 +484,7 @@ export function QuizAttemptScreen({
                 <button
                   key={option.key}
                   type="button"
-                  disabled={phase === "advancing" || connectionState === "failed"}
+                  disabled={phase === "advancing"}
                   onClick={() => setSelectedKey(option.key)}
                   className={cn(
                     "flex min-h-11 w-full items-center gap-3 rounded-lg border px-4 py-3 text-left text-base transition-colors",
@@ -496,9 +526,31 @@ export function QuizAttemptScreen({
             <p className="mb-4 text-sm font-medium text-fg">
               Please return to fullscreen to continue your quiz.
             </p>
-            <Button onClick={() => document.documentElement.requestFullscreen?.().catch(() => {})}>
+            <Button
+              onClick={async () => {
+                try {
+                  await document.documentElement.requestFullscreen?.();
+                } catch {
+                  // Browser refused (common on iOS and in some Android modes).
+                  // Never leave the student trapped behind this overlay — the
+                  // exit below is always available and the switch is logged
+                  // either way, so the admin still sees it in the report.
+                  showToast(
+                    "Your browser would not allow fullscreen. You can continue without it.",
+                    "warning"
+                  );
+                }
+              }}
+            >
               Return to Fullscreen
             </Button>
+            <button
+              type="button"
+              onClick={() => setFullscreenLost(false)}
+              className="mt-3 block w-full text-xs font-medium text-fg-secondary underline hover:text-fg"
+            >
+              Continue without fullscreen
+            </button>
           </div>
         </div>
       )}

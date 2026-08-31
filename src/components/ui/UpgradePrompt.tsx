@@ -24,7 +24,12 @@ export function UpgradePrompt({
           <p className="mt-1 text-sm text-fg-secondary">{message}</p>
           {benefits && <p className="mt-1 text-sm text-fg-secondary">{benefits}</p>}
           <div className="mt-3 flex items-center gap-3">
-            <Button type="button" size="sm" disabled>
+            <Button
+              type="button"
+              size="sm"
+              disabled
+              title="Online payment isn't set up yet — contact us to upgrade"
+            >
               Upgrade — $19/month
             </Button>
             {onDismiss && (
@@ -37,6 +42,11 @@ export function UpgradePrompt({
               </button>
             )}
           </div>
+          {/* The button is deliberately disabled (no payment integration yet).
+              Saying so on screen beats a greyed-out button that looks broken. */}
+          <p className="mt-2 text-xs text-fg-muted">
+            Online payment isn&apos;t available yet — get in touch to change your plan.
+          </p>
         </div>
       </div>
     </div>

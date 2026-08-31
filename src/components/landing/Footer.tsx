@@ -1,21 +1,25 @@
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
 
+// Only real destinations here. Placeholder "#" links (Blog, Help Center,
+// Changelog) looked identical to working ones and did nothing when tapped —
+// a dead link styled as a live link is worse than no link at all. They come
+// back when those pages actually exist.
 const columns = [
   {
     title: "Product",
     links: [
       { label: "Features", href: "/#features" },
       { label: "Pricing", href: "/pricing" },
-      { label: "Changelog", href: "#" },
+      { label: "How it works", href: "/#how-it-works" },
     ],
   },
   {
     title: "Resources",
     links: [
-      { label: "Blog", href: "#" },
-      { label: "Help Center", href: "#" },
-      { label: "Contact Us", href: "#" },
+      { label: "FAQ", href: "/#faq" },
+      { label: "Create an academy", href: "/signup" },
+      { label: "Join with a code", href: "/signup/student" },
     ],
   },
   {
