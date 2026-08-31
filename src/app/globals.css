@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
 /* Makes Tailwind's dark: variant respond to next-themes' .dark class
    instead of the OS prefers-color-scheme media query. */
@@ -14,11 +16,20 @@
   --fg-secondary: #475569;
   --fg-muted: #94A3B8;
 
-  /* Brand */
-  --primary: #4F46E5;
-  --primary-hover: #4338CA;
-  --primary-subtle: #E0E7FF;
-  --primary-faint: #EEF2FF;
+  /* Brand — gold is the CTA/primary-action color, spruce is the secondary
+     brand color (nav, secondary buttons, outline/ghost text, links).
+     See docs/DESIGN-SYSTEM.md. */
+  --primary: #F4A300;
+  --primary-hover: #D48E00;
+  --primary-subtle: #FFF3D6;
+  --primary-faint: #FFFBF0;
+  --primary-foreground: #0A1F17; /* always near-black — gold is light in both themes */
+
+  --secondary: #1B4D3E;
+  --secondary-hover: #256B54;
+  --secondary-subtle: #D9F2E8;
+  --secondary-faint: #EDFAF4;
+  --secondary-foreground: #FFFFFF;
 
   /* Semantic */
   --success: #16A34A;
@@ -38,6 +49,32 @@
   --difficulty-medium-fg: #6D28D9;
   --difficulty-hard-bg: #DDD6FE;
   --difficulty-hard-fg: #4C1D95;
+
+  /* shadcn/ui primitive tokens (Accordion, Tabs, Select, Switch,
+     DropdownMenu, Sonner) — mapped onto the tokens above rather than left
+     as shadcn's own default grayscale, so those components match the rest
+     of the app instead of running a second, disconnected colour system. */
+  --foreground: var(--fg);
+  --card: var(--surface);
+  --card-foreground: var(--fg);
+  --popover: var(--surface);
+  --popover-foreground: var(--fg);
+  --muted: var(--surface-raised);
+  --muted-foreground: var(--fg-muted);
+  --accent: var(--secondary-faint);
+  --accent-foreground: var(--fg);
+  --destructive: var(--danger);
+  --input: var(--border);
+  --ring: var(--primary);
+  --radius: 0.5rem;
+  /* Chart tokens ship with the preset but are unused — analytics (Phase L)
+     uses Recharts directly with its own palette, not shadcn's chart
+     component. Left at shadcn's defaults. */
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
 }
 
 .dark {
@@ -49,10 +86,23 @@
   --fg-secondary: #CBD5E1;
   --fg-muted: #94A3B8;
 
-  --primary: #818CF8;
-  --primary-hover: #818CF8;
+  /* Gold already reads clearly on a dark surface — kept as-is, hover goes
+     brighter instead of darker for correct dark-mode feedback direction.
+     Spruce is swapped for its lighter tint (spruce-400) per
+     docs/DESIGN-SYSTEM.md's dark-mode mapping table — the dark base tone
+     has too little contrast against a dark background to read as text,
+     a border, or a solid button fill. */
+  --primary: #F4A300;
+  --primary-hover: #FFBA33;
   --primary-subtle: color-mix(in srgb, var(--primary) 22%, var(--surface));
   --primary-faint: color-mix(in srgb, var(--primary) 12%, var(--surface));
+  --primary-foreground: #0A1F17;
+
+  --secondary: #4AAE8A;
+  --secondary-hover: #7DCDB0;
+  --secondary-subtle: color-mix(in srgb, var(--secondary) 22%, var(--surface));
+  --secondary-faint: color-mix(in srgb, var(--secondary) 12%, var(--surface));
+  --secondary-foreground: #0A1F17;
 
   --success: #4ADE80;
   --success-bg: color-mix(in srgb, var(--success) 18%, var(--surface));
@@ -74,6 +124,24 @@
   --difficulty-medium-bg: color-mix(in srgb, var(--difficulty-medium-fg) 15%, var(--surface));
   --difficulty-hard-fg: #8B5CF6;
   --difficulty-hard-bg: color-mix(in srgb, var(--difficulty-hard-fg) 15%, var(--surface));
+
+  --foreground: var(--fg);
+  --card: var(--surface);
+  --card-foreground: var(--fg);
+  --popover: var(--surface);
+  --popover-foreground: var(--fg);
+  --muted: var(--surface-raised);
+  --muted-foreground: var(--fg-muted);
+  --accent: var(--secondary-faint);
+  --accent-foreground: var(--fg);
+  --destructive: var(--danger);
+  --input: var(--border);
+  --ring: var(--primary);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
 }
 
 @theme inline {
@@ -91,6 +159,15 @@
   --color-primary-hover: var(--primary-hover);
   --color-primary-subtle: var(--primary-subtle);
   --color-primary-faint: var(--primary-faint);
+  --color-primary-foreground: var(--primary-foreground);
+  /* Alias kept for existing components written against --color-on-primary. */
+  --color-on-primary: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-hover: var(--secondary-hover);
+  --color-secondary-subtle: var(--secondary-subtle);
+  --color-secondary-faint: var(--secondary-faint);
+  --color-secondary-foreground: var(--secondary-foreground);
 
   --color-success: var(--success);
   --color-success-bg: var(--success-bg);
@@ -107,6 +184,32 @@
   --color-difficulty-medium-fg: var(--difficulty-medium-fg);
   --color-difficulty-hard-bg: var(--difficulty-hard-bg);
   --color-difficulty-hard-fg: var(--difficulty-hard-fg);
+
+  /* shadcn primitive tokens — required by Accordion/Tabs/Select/Switch/
+     DropdownMenu/Sonner's own class names (bg-card, text-muted-foreground,
+     ring-ring, etc.). Values above already point back at the brand tokens. */
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -117,5 +220,11 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
   }
 }

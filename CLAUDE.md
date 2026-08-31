@@ -13,16 +13,22 @@ I am **not a developer**. English is not my first language.
 - Do not show me code unless I ask. Tell me what you changed and why.
 - When something breaks, tell me the cause in plain words first, the fix second.
 - If I use a wrong technical word, correct me to the right one.
+- **On technical trade-offs, decide for me.** Pick the better option, then tell me what you chose and why in plain words. Do not hand me a multiple-choice question about architecture — I cannot judge those. Still ask me about product direction, money, deleting things, and anything that goes out to real people.
 
 ---
 
 ## What this project is
 
-An **adaptive quiz platform**. An admin uploads study material; Gemini turns it into scenario-based questions at three difficulty levels; students take quizzes where the difficulty moves up or down after every answer.
+**Quizo** — a multi-tenant SaaS. Many academy owners sign up. Each gets a completely isolated space. AI turns their material into adaptive quizzes. Students take them with anti-cheating protection.
 
-**Two sides:** admin (create, review, assign, report) and student (take quiz, see results, get certificate).
+**Three sides:**
+1. **Academy owner (admin)** — creates courses, generates quizzes, approves students, sees analytics
+2. **Student** — joins with an invite code, takes quizzes, earns certificates
+3. **Platform owner (me, Talha)** — sees every academy, sets who is Free vs Pro vs Institution
 
-**Constraint that governs every decision: everything must be free.** No paid API, no paid tier, no credit card. If a solution requires payment, propose a free alternative instead and tell me the trade-off.
+**Business model:** Free / Pro $19 / Institution $49 per month.
+
+**Cost rule:** the platform must cost me **nothing to run**. Free tiers only — no paid API, no paid hosting. If something needs payment, propose a free alternative and tell me the trade-off. (Taking payment from customers is a separate thing and is out of scope for now.)
 
 ---
 
@@ -30,120 +36,105 @@ An **adaptive quiz platform**. An admin uploads study material; Gemini turns it 
 
 | Layer | Tool |
 |---|---|
-| Framework | Next.js (App Router) + TypeScript |
-| Styling | Tailwind CSS |
-| Database + Auth | Supabase (PostgreSQL) |
-| AI generation | Google Gemini (`gemini-3.6-flash` — `gemini-2.0-flash` was retired by Google) |
-| OCR | Tesseract.js — **browser-side only** |
+| Framework | Next.js 16 (App Router) + TypeScript strict |
+| Styling | Tailwind CSS v4 |
+| Database + Auth | Supabase (PostgreSQL + RLS) |
+| AI | Google Gemini `gemini-3.6-flash` — **BYOK**, each academy uses their own free key |
+| Validation | zod |
 | Email | Resend |
 | Charts | Recharts |
 | PDF | jsPDF |
 | Excel | SheetJS (`xlsx`) |
+| OCR | Tesseract.js — **browser-side only** |
 | Theme | next-themes |
 | Icons | lucide-react |
 | Hosting | Vercel |
+
+> `gemini-2.0-flash` and `gemini-2.5-flash` are **retired**. Use `gemini-3.6-flash`.
 
 ---
 
 ## Non-negotiable rules
 
-### Security — never break these
+### Multi-tenancy — the rule that protects the whole business
 
-1. **`is_correct` never reaches the browser before submission.** Strip it server-side from every question response.
-2. **The server owns the clock.** Never trust a timer value sent from the browser. It is a hint only.
-3. **Question selection and answer checking happen server-side.** Never in the browser.
-4. **Row Level Security on every table.** A student reads only their own rows.
-5. **A student must never reach an admin route**, even by typing the URL. Enforce in middleware.
-6. **A submitted attempt is immutable.** No edits, no re-submission.
-7. **Secrets live only in environment variables.** Never in code, never committed.
+1. **Every data table has `organization_id`.** No exceptions.
+2. **Isolation is enforced by RLS in the database, never by application code.** Use the `current_org()` SQL helper, which reads the org from the JWT.
+3. **Academy A must never see academy B's anything.** This is the single most important test in the project.
+4. **Never use the `service_role` key in client code.** Server actions and API routes only.
 
-### Product rules
+### Security
 
-8. Every question is worth **1 mark**. No difficulty weighting.
-9. Passing percentage is set **per quiz**, not globally.
-10. New signups start as `pending`. Only an admin approval makes them `active`.
-11. AI-generated questions start `is_approved = false`. Only approved questions appear in a real quiz.
-12. Manually written questions are approved on creation (a human wrote them).
-13. A quiz cannot be published without enough approved questions per required level.
-14. Certificates are issued **only** on pass, automatically, at submission.
+5. **`is_correct` never reaches the browser before submission.** Strip it server-side from every question response.
+6. **The server owns the clock.** A timer value from the browser is a hint, never trusted.
+7. **Question selection and answer checking happen server-side.** Never in the browser.
+8. **A student must never reach an admin route**, even by typing the URL. Enforce in middleware.
+9. **A submitted attempt is immutable.** No edits, no re-submission.
+10. **Secrets live only in environment variables.** Each academy's Gemini key is encrypted at rest and decrypted server-side only.
+11. **The platform-owner area is gated by an env allowlist**, never by a database role a customer could reach.
+
+### Product
+
+12. Every question is worth **1 mark**. No difficulty weighting.
+13. Passing percentage is set **per quiz**.
+14. AI questions start `is_approved = false`. Manual questions are approved on creation (a human wrote them).
+15. A quiz cannot be published without enough approved questions per required level.
+16. Certificates are issued **only** on pass, automatically, at submission.
+17. Score is **best of N attempts**, not last and not average.
 
 ---
 
 ## The adaptive engine — the core logic
 
-Start every attempt at **Easy**.
+Start every attempt at **Easy**. The server picks each question **after** seeing the previous answer.
 
 ```
 correct  →  easy → medium → hard → hard (ceiling)
 wrong    →  hard → medium → easy → easy (floor)
 ```
 
+- One question at a time. **No back button, no skip.** This is what makes adaptive possible — if all questions were sent up front, the difficulty would be locked before the student answered anything.
 - Applies **within a single attempt only**. Never across quizzes.
-- If `difficulty_mode` is `easy_only` / `medium_only` / `hard_only`, the level **never changes**.
-- Quiz is a **pool**, not a fixed list. Admin asks for N → generate 3N (N easy + N medium + N hard). Student sees N, chosen live.
+- If `difficulty_mode` is a single level, the level **never changes**.
 - Never repeat a question inside one attempt.
 - **Pool exhaustion fallback:** Easy→Medium, Hard→Medium, Medium→Easy then Hard. If nothing remains, submit early and explain why.
 - Record `difficulty_at_time` on every answer — reporting depends on it.
 
----
-
-## Database — 11 tables
-
-| Table | Holds | Critical fields |
-|---|---|---|
-| `profiles` | People | `role` (admin/user), `status` (pending/active/rejected) |
-| `courses` | Subjects | |
-| `course_outlines` | Topics in a course | `topic_order` |
-| `content_uploads` | Uploaded material | `source_type` (text/image), `raw_text` |
-| `quizzes` | Quiz settings | `timer_minutes`, `passing_percent`, `questions_to_show`, `difficulty_mode`, `max_attempts`, `is_published` |
-| `questions` | Question pool | `difficulty`, `question_type`, `scenario_text`, `is_approved`, `generated_by_ai` |
-| `options` | 4 answer choices | `is_correct` — **never sent to browser early** |
-| `quiz_assignments` | Who gets which quiz | unique on (quiz_id, user_id) |
-| `attempts` | Each sitting | `status`, `current_difficulty`, `time_remaining_seconds`, `percentage`, `passed` |
-| `attempt_answers` | Every answer given | `is_correct`, `difficulty_at_time`, `question_order` |
-| `certificates` | Issued certificates | `certificate_code` (unique) |
-
-Full schema: `docs/SCHEMA.md`
-
-**`attempts.time_remaining_seconds` and `attempts.current_difficulty` exist so a student can close the browser and resume exactly where they left off.**
+**Free vs Pro differ by pool size, not by player.** Free generates 1× the questions shown; Pro generates 3× so retakes draw fresh questions. Same engine for everyone.
 
 ---
 
-## API routes — the quiz engine
+## Database
 
-| Route | Job |
-|---|---|
-| `POST /api/quiz/next-question` | Pick next question from `current_difficulty` pool. Strip `is_correct`. Return shuffled options. |
-| `POST /api/quiz/submit-answer` | Check correctness server-side, write answer, move the ladder, update server clock. **Do not reveal correctness.** |
-| `POST /api/quiz/submit` | Score, compute percentage, set pass/fail, issue certificate if passed. |
-| `POST /api/quiz/heartbeat` | Every 30s. Sync `time_remaining_seconds` from server clock. |
-| `POST /api/generate-questions` | Call Gemini once per difficulty level. |
-| `POST /api/send-approval-email` | Resend. **Email failure must never roll back an approval.** |
+19 tables, every data table carrying `organization_id`. Full schema, RLS policies and migration order: **`docs/SCHEMA.md`**.
+
+The tables in one line each:
+
+`organizations` · `organization_settings` · `profiles` · `sub_admin_permissions` · `courses` · `content_uploads` · `invite_codes` · `enrollments` · `quizzes` · `quiz_pools` · `pool_questions` · `quiz_attempts` · `attempt_answers` · `quiz_event_stream` · `ai_usage_log` · `certificates` · `notifications` · `email_log` · `plan_limits`
+
+`content_uploads` is a deliberate addition beyond the original spec — see `docs/SCHEMA.md` Table 19 for why the AI generation prompt needs real source material, not a bare topic string.
 
 ---
 
 ## Design system
 
-Full tokens: `docs/DESIGN-SYSTEM.md`. The short version:
+Full tokens: **`docs/DESIGN-SYSTEM.md`**. The short version:
 
-**Light** — bg `#F8FAFC`, surface `#FFFFFF`, border `#E2E8F0`, text `#0F172A` / `#475569` / `#94A3B8`, primary `#4F46E5` (hover `#4338CA`)
-
-**Dark** — bg `#0F172A`, surface `#1E293B`, raised `#334155`, text `#F1F5F9` / `#CBD5E1` / `#94A3B8`, primary `#818CF8`
-
-**Semantic** — success `#16A34A`, warning `#D97706`, danger `#DC2626`, info `#2563EB`
+**Brand** — spruce green `#1B4D3E` (primary), gold `#F4A300` (CTAs)
+**Semantic** — success `#16A34A`, error `#DC2626`, warning `#F59E0B`, info `#2563EB`
+**Font** — Inter
 
 **Rules:**
 - Default theme is **system**. Zero flash on load.
-- Dark mode: never pure black, never pure white text. Surfaces get **lighter** to show elevation, not darker.
 - **Red is reserved** for wrong answers, failures, errors, deletes. Never decorative.
-- **Difficulty is never green/yellow/red.** Use `DifficultyIndicator`: three slate `#64748B` bars (1/2/3 filled) plus the word.
+- **Difficulty is never green/yellow/red.** Use `DifficultyIndicator`: three slate bars plus the word.
 - Colour is never the only signal — always pair with an icon or text.
-- Spacing is always a multiple of 4px. Radius: 6px controls, 8px cards, 12px modals.
+- Spacing is always a multiple of 4px.
 - Timer: quiet → primary → warning under 5 min → danger under 1 min. **Never flashes.**
-- Minimum touch target 44px. Minimum font size 14px. Contrast ≥ 4.5:1.
+- Minimum touch target 44px. Minimum font 14px. Contrast ≥ 4.5:1.
 - Certificate PDF is **always light-coloured**, ignoring theme — it gets printed.
 
-**Reuse components from `src/components/ui/`. Never invent a new button or input style.**
+**Reuse components from `src/components/ui/`.** They already carry passed accessibility work. shadcn/ui is installed only for pieces we lack (Accordion, Tabs, Select, Switch, DropdownMenu) — do not replace working components with shadcn versions. `Toast`/`useToast` already covers what Sonner would — it was dropped from the shadcn install for exactly that reason.
 
 ---
 
@@ -152,51 +143,66 @@ Full tokens: `docs/DESIGN-SYSTEM.md`. The short version:
 ```
 src/
   app/
-    (auth)/        login, signup, forgot-password, reset-password, pending-approval
-    (admin)/       dashboard, courses, quizzes, users, attempts, reports
-    (user)/        dashboard, quizzes, history
+    (public)/      landing, pricing, login, signup, signup/student
+    (dashboard)/   dashboard/ — admin: courses, students, analytics, settings
+    (student)/     student/ — quizzes, results, history
+    platform/      platform owner only — every academy, plan control
     quiz/          instructions, attempt, result
     api/           quiz/*, generate-questions, send-approval-email
   components/
     ui/            Button Input Card Badge Modal Toast Table EmptyState
                    DifficultyIndicator LoadingSpinner Skeleton ThemeToggle
-    admin/         admin-only pieces
-    user/          student-only pieces
-  lib/             supabase clients, getCurrentUser, helpers
+    dashboard/     admin-only pieces
+    student/       student-only pieces
+    landing/       marketing pieces
+  lib/             supabase clients, gemini, email, quiz-engine, helpers
   types/           database.ts
-docs/              BUILD-PLAN.md  DESIGN-SYSTEM.md  SCHEMA.md
+docs/              BUILD-PLAN.md SCHEMA.md DESIGN-SYSTEM.md FEATURES.md
+                   API-ROUTES.md LANDING-PAGE.md  archive/
 ```
 
 ---
 
 ## Conventions
 
-- Components `PascalCase.tsx`. Helpers `kebab-case.ts`. Routes lowercase.
 - Server Components by default. `'use client'` only when interactivity requires it.
+- All database work in Server Actions or API routes — never from a client component.
+- `zod` for every form and API input.
+- Components `PascalCase.tsx`. Helpers `kebab-case.ts`. Routes lowercase.
 - Every async UI needs a loading state and an error state. No blank screens.
-- Every error message is plain English with a next action. Never show a raw stack trace to a user.
-- Every empty list gets an `EmptyState`, never a bare blank area.
+- Every error message is plain English with a next action. Never a raw stack trace.
+- Every empty list gets an `EmptyState`.
 - Aggregate in SQL, not in the browser.
+
+---
+
+## Known limits — real, not bugs
+
+1. **Resend free tier only emails my own verified address.** Emails to real students will fail until a domain is bought (~$10/year). Build the emails anyway, log failures to `email_log`, and **never let an email failure roll back the action it followed**.
+2. **Vercel free tier kills a function at 60 seconds.** Generating 20 questions for one level measured ~71s. Keep generation chunked per level with progress, and cap per-request counts.
+3. **Supabase free tier pauses after 7 days idle.** Open the dashboard and Restore before any demo.
+4. **SheetJS free edition cannot write bold cells or frozen panes.** Column widths and number formats work.
 
 ---
 
 ## Definition of done
 
-A task is not finished until:
-
-- [ ] It works on desktop **and** on a phone screen
-- [ ] It works in **both** light and dark theme
+- [ ] Works on desktop **and** a phone screen
+- [ ] Works in **both** light and dark theme
 - [ ] Loading, empty and error states all exist
-- [ ] Keyboard navigation works, focus ring is visible
+- [ ] Keyboard navigation works, focus ring visible
+- [ ] **Academy A cannot see academy B's data** — tested, not assumed
 - [ ] Security rules above are not violated
-- [ ] `npm run build` passes with no errors
-- [ ] I have tested it and confirmed
+- [ ] `npm run build` passes clean
+- [ ] Talha has tested it and confirmed
 
 ---
 
 ## Current status
 
 Build order and progress: **`docs/BUILD-PLAN.md`** — read it before starting work, tick items off as you finish.
+
+The previous single-academy version of this app is preserved at git tag `v1-single-academy`, with its docs in `docs/archive/`.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

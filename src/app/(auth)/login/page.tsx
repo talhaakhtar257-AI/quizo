@@ -1,16 +1,33 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState, type FormEvent } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button, Card, Input } from "@/components/ui";
 
+// useSearchParams() opts the page out of static prerendering unless
+// wrapped in Suspense — Next.js fails the production build otherwise.
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<Card className="p-6" />}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(
+    searchParams.get("suspended")
+      ? "This academy's account is suspended. Contact support."
+      : searchParams.get("deactivated")
+        ? "Your account has been deactivated. Contact your academy admin."
+        : null
+  );
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(event: FormEvent) {
@@ -32,25 +49,27 @@ export default function LoginPage() {
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("role, status")
+      .select("role, is_active, organizations!profiles_organization_id_fkey(is_suspended)")
       .eq("id", data.user.id)
       .maybeSingle();
 
-    if (!profile || profile.status === "pending") {
+    if (!profile || !profile.is_active) {
       await supabase.auth.signOut();
       setLoading(false);
-      setError("Your account is waiting for admin approval.");
+      setError("This account has been deactivated. Contact your academy admin.");
       return;
     }
 
-    if (profile.status === "rejected") {
+    const org = profile.organizations as unknown as { is_suspended: boolean } | null;
+    if (org?.is_suspended) {
       await supabase.auth.signOut();
       setLoading(false);
-      setError("Your account request was not approved.");
+      setError("This academy's account is suspended. Contact support.");
       return;
     }
 
-    router.push(profile.role === "admin" ? "/admin/dashboard" : "/dashboard");
+    const isAdminOrSubAdmin = profile.role === "admin" || profile.role === "sub_admin";
+    router.push(isAdminOrSubAdmin ? "/dashboard" : "/student");
     router.refresh();
   }
 
@@ -93,7 +112,11 @@ export default function LoginPage() {
       <p className="mt-6 text-center text-sm text-fg-secondary">
         Don&apos;t have an account?{" "}
         <Link href="/signup" className="font-medium text-primary hover:underline">
-          Sign up
+          Create your academy
+        </Link>{" "}
+        or{" "}
+        <Link href="/signup/student" className="font-medium text-primary hover:underline">
+          join with an invite code
         </Link>
       </p>
     </Card>

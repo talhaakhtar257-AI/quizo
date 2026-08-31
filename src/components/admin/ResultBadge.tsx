@@ -14,7 +14,7 @@ export function ResultBadge({
 }) {
   if (kind === "pass") return <Badge variant="success">Pass</Badge>;
   if (kind === "fail") return <Badge variant="danger">Fail</Badge>;
-  if (kind === "expired") return <Badge variant="neutral">Expired</Badge>;
+  if (kind === "timed_out") return <Badge variant="neutral">Timed out</Badge>;
   if (kind === "in_progress") {
     return (
       <div className="space-y-0.5">

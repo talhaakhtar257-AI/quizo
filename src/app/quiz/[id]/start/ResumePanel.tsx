@@ -53,7 +53,7 @@ export function ResumePanel({
         <Button size="lg" loading={loading} onClick={handleResume} className="w-full">
           Resume Quiz
         </Button>
-        <Link href="/dashboard" className="block text-sm text-fg-secondary hover:text-fg">
+        <Link href="/student" className="block text-sm text-fg-secondary hover:text-fg">
           Back to Dashboard
         </Link>
       </Card>

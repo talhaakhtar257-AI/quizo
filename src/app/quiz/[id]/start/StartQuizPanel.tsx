@@ -66,14 +66,14 @@ export function StartQuizPanel({
           </div>
           <div>
             <h1 className="text-xl font-bold text-fg">{quiz.title}</h1>
-            <p className="text-sm text-fg-secondary">{quiz.courseTitle}</p>
+            <p className="text-sm text-fg-secondary">{quiz.courseName}</p>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <Stat label="Questions" value={String(quiz.questionsToShow)} />
-          <Stat label="Time limit" value={`${quiz.timerMinutes} min`} />
-          <Stat label="Passing" value={`${quiz.passingPercent}%`} />
+          <Stat label="Time limit" value={quiz.timeLimitMinutes ? `${quiz.timeLimitMinutes} min` : "None"} />
+          <Stat label="Passing" value={`${quiz.passingScore}%`} />
           <Stat label="Mode" value={MODE_LABELS[quiz.difficultyMode]} />
         </div>
 
@@ -120,7 +120,7 @@ export function StartQuizPanel({
         >
           Start Quiz
         </Button>
-        <Link href="/dashboard" className="text-sm text-fg-secondary hover:text-fg">
+        <Link href="/student" className="text-sm text-fg-secondary hover:text-fg">
           Cancel
         </Link>
       </div>

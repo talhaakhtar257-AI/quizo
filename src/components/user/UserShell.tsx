@@ -9,9 +9,9 @@ import { signOut } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/quizzes", label: "My Quizzes", icon: ListChecks },
-  { href: "/history", label: "History", icon: History },
+  { href: "/student", label: "Dashboard", icon: LayoutDashboard, exact: true },
+  { href: "/student/quizzes", label: "My Quizzes", icon: ListChecks },
+  { href: "/student/history", label: "History", icon: History },
 ];
 
 export function UserShell({
@@ -38,8 +38,8 @@ export function UserShell({
           <div className="flex items-center gap-6">
             <span className="text-lg font-bold text-fg">Quizo</span>
             <nav className="hidden items-center gap-1 sm:flex">
-              {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
-                const active = pathname.startsWith(href);
+              {NAV_ITEMS.map(({ href, label, icon: Icon, exact }) => {
+                const active = exact ? pathname === href : pathname.startsWith(href);
                 return (
                   <Link
                     key={href}
@@ -84,8 +84,8 @@ export function UserShell({
 
         {mobileOpen && (
           <nav className="space-y-1 border-t border-border px-4 py-3 sm:hidden">
-            {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
-              const active = pathname.startsWith(href);
+            {NAV_ITEMS.map(({ href, label, icon: Icon, exact }) => {
+              const active = exact ? pathname === href : pathname.startsWith(href);
               return (
                 <Link
                   key={href}

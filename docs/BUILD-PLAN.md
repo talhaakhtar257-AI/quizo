@@ -1,10 +1,13 @@
-# Build Plan
+# Quizo — Build Plan (Multi-Academy Rebuild)
 
 Sequential task list. Work top to bottom. Tick each box as it is finished and tested.
 
 **Legend:** 🔵 Talha does this by hand · 🟢 Claude Code builds it · 🟡 Stop and test
 
 > Read `CLAUDE.md` before starting any phase.
+>
+> The previous single-academy version of this app is preserved at git tag `v1-single-academy`,
+> with its docs in `docs/archive/`. This plan replaces `docs/archive/BUILD-PLAN-v1.md`.
 
 ---
 
@@ -12,1058 +15,757 @@ Sequential task list. Work top to bottom. Tick each box as it is finished and te
 
 | Phase | Name | Status |
 |---|---|---|
-| 1 | Computer setup | ✅ |
-| 2 | Free accounts | ✅ |
-| 3 | Project skeleton | ✅ |
-| 4 | Database | ✅ |
-| 5 | Design system | ✅ |
-| 6 | Auth (A) | ✅ |
-| 7 | Courses (B) | ✅ |
-| 8 | Content upload (C) | ✅ |
-| 9 | AI generation (D) | ✅ |
-| 10 | Manual quiz (E) | ✅ |
-| 11 | Approval + assign (F) | ✅ |
-| 12 | Student dashboard (J) | ✅ |
-| 13 | Quiz engine (K) | ✅ |
-| 14 | Attempt tracking (G) | ✅ |
-| 15 | Analytics (H) | ✅ |
-| 16 | Export (I) | ✅ |
-| 17 | Certificates (L) | ✅ |
-| 18 | Testing | ✅ |
-| 19 | Deploy | ☐ |
-
-**Note the order:** J and K come before G, H and I. Reports about attempts cannot be built until attempts exist.
+| 0 | Reconcile docs | ✅ |
+| A | Database rebuild | ✅ |
+| B | Design system repaint | ✅ |
+| C | Landing page + pricing | ✅ |
+| D | Auth + multi-tenancy | ✅ |
+| E | Dashboard shell + settings | ✅ |
+| F | Courses + invite codes | ✅ |
+| G | Enrollment approval + email | ✅ |
+| H | AI quiz generation | ✅ |
+| I | Quiz lifecycle | ☐ |
+| J | Quiz player (adaptive engine) | ☐ |
+| K | Anti-cheating | ☐ |
+| L | Analytics | ☐ |
+| M | Certificates | ☐ |
+| N | Sub-admins | ☐ |
+| O | Plan limits + upgrade prompts | ☐ |
+| P | Platform-owner area | ☐ |
+| Q | Polish + deploy | ☐ |
 
 ---
 
-## Phase 1 — Computer setup 🔵
+## Phase 0 — Reconcile docs 🟢
 
-- [x] Node.js LTS installed → `node -v` shows v20+
-- [x] VS Code installed
-- [x] Git installed → `git --version` works
-- [x] `git config --global user.name` and `user.email` set
-- [x] GitHub account created
-- [x] Claude Code installed and logged in
-
----
-
-## Phase 2 — Free accounts 🔵
-
-Create `my-keys.txt` on the Desktop first. Paste each key as you get it.
-
-- [x] **Supabase** — new project `quiz-system`, region Southeast Asia (Singapore)
-- [x] Saved: database password
-- [x] Saved: Project URL
-- [x] Saved: `anon public` key
-- [x] Saved: `service_role` key ⚠️ never expose this
-- [x] **Google AI Studio** → saved Gemini API key
-- [x] **Resend** → saved API key (shown once only)
-- [x] **Vercel** → account created via GitHub
+- [x] `CLAUDE.md` rewritten for the multi-tenant product
+- [x] `docs/archive/CLAUDE-v1.md`, `docs/archive/BUILD-PLAN-v1.md` preserved
+- [x] `docs/SCHEMA.md`, `docs/DESIGN-SYSTEM.md`, `docs/FEATURES.md`, `docs/API-ROUTES.md`,
+      `docs/LANDING-PAGE.md` in place, corrected against the 3 decisions in the plan file
+- [x] `docs/BUILD-PLAN.md` (this file) replaces the old 18-phase plan
+- [x] `v1-single-academy` git tag created — the old app can always be recovered
 
 ---
 
-## Phase 3 — Project skeleton
+## Phase A — Database rebuild 🟢🟡
 
-- [x] 🔵 Folder `quiz-system` created, no spaces in path, opened in VS Code
+The current 11 tables have no `organization_id` and cannot be patched into a multi-tenant shape —
+they get dropped and rebuilt from `docs/SCHEMA.md`.
 
-### 3.1 🟢 Scaffold the project
-
-```
-Set up a fresh Next.js project in this folder: App Router, TypeScript,
-Tailwind CSS, ESLint, src/ directory, import alias @/*.
-
-Install: @supabase/supabase-js @supabase/ssr @google/generative-ai
-tesseract.js resend recharts jspdf xlsx lucide-react next-themes date-fns
-
-Create the folder structure described in CLAUDE.md under src/.
-
-Create .env.local with empty placeholders for:
-NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY,
-SUPABASE_SERVICE_ROLE_KEY, GEMINI_API_KEY, RESEND_API_KEY
-
-Make sure .env.local is in .gitignore.
-Then tell me exactly what to type to run the site.
-```
-
-- [x] 🔵 Paste all 5 real keys into `.env.local`, then **save the file**
-- [x] 🟡 `npm run dev` → `localhost:3000` loads
-
-### 3.2 🟢 First commit
-
-```
-Set up git. Confirm .env.local is ignored. Commit as "Initial project setup".
-Then tell me how to create a PRIVATE repo on github.com and connect it.
-```
-
-- [x] 🟡 Code is on GitHub and `.env.local` is **not** visible there
-
----
-
-## Phase 4 — Database
-
-### 4.1 🟢 Generate the schema
-
-```
-Create the complete Supabase schema as one SQL file I can paste into the
-SQL Editor. Build the 11 tables exactly as described in CLAUDE.md and
-docs/SCHEMA.md. UUID primary keys, created_at everywhere.
-
-Also:
-- Indexes on every foreign key and on attempts(user_id, quiz_id)
-- A trigger creating a profiles row on signup with status pending, role user
-- Row Level Security on every table with the policies from CLAUDE.md
-- Explain how you prevented students reading options.is_correct early
-
-Then tell me step by step where to paste it in Supabase.
-```
-
-- [x] 🔵 SQL pasted into Supabase → SQL Editor → Run → "Success" *(applied directly via the Supabase MCP connection instead)*
-- [x] 🟡 All 11 tables visible in Table Editor
-- [x] 🔵 Created my admin user in Authentication → Users (Auto Confirm ON)
-- [x] 🔵 Set my `profiles` row to `role = admin`, `status = active`
-
-### 4.2 🟢 Connect app to database
-
-```
-Connect Next.js to Supabase:
-1. Client helpers in src/lib/ (browser + server) using @supabase/ssr
-2. TypeScript types in src/types/database.ts matching all 11 tables
-3. Middleware that refreshes the session on every request
-4. A temporary page at /test-db that reads profiles and shows the rows
-```
-
-- [x] 🟡 `/test-db` shows my admin row
-- [x] 🟢 `Delete the /test-db page now.`
+- [x] 🔵 Confirmed the "wipe database" go-ahead one more time immediately before running the drop
+- [x] 🟢 Dropped the 11 v1 tables, their triggers, policies, functions and enum types
+- [x] 🟢 Created all 18 tables in the migration order `SCHEMA.md` specifies, via 9 numbered
+      Supabase migrations
+- [x] 🟢 `current_org()` helper function reading `organization_id` from JWT claims
+- [x] 🟢 RLS enabled on all 18 tables, policies as `SCHEMA.md` states — **with one correction**:
+      the spec file gave students direct INSERT/UPDATE rights on `quiz_attempts` and
+      `attempt_answers` via `student_id = auth.uid()`. That is the exact score-forging hole v1
+      hit and fixed in commit `e0421d3` — a student could PATCH their own attempt row through the
+      Supabase REST API directly and bypass server-side grading. Built these two tables
+      **read-only** to students instead; every write goes through the quiz-engine API routes
+      (service-role client) once Phase J exists.
+- [x] 🟢 The `profiles` column-guard trigger (blocks a student changing their own `role`,
+      `organization_id`, `is_active`) — carried forward from v1, tested live
+- [x] 🟢 Seed `plan_limits` with the free/pro/institution rows
+- [x] 🟢 Regenerated `src/types/database.ts` from the new schema
+- [x] 🟢 Fixed 2 Supabase linter warnings on the new functions: pinned `search_path` on
+      `current_org`/`update_updated_at`, revoked public RPC access on the two trigger-only
+      functions
+- [x] 🟡 Created two organizations with two users directly via SQL. Confirmed a `SELECT` as org A
+      never returns org B's rows (`courses`, `profiles` both checked) — **and** confirmed the two
+      real security fixes hold: a student cannot self-promote via their own profile row, and a
+      student cannot write a `quiz_attempts` row directly at all (RLS rejects it outright — no
+      write policy exists for that role)
+- [x] 🟢 **Added later, during Phase F:** `content_uploads` (19th table) — the spec's schema
+      dropped it in favor of bare-topic AI generation, but the strong prompt this project keeps
+      (Phase H) needs real source material to ground questions in. See `docs/SCHEMA.md` Table 19.
+- [ ] 🔵 Re-create your own admin login — **blocked on Phase D** (no sign-up flow exists yet in
+      the new schema's shape); do this once Phase D is built
 
 ---
 
-## Phase 5 — Design system
+## Phase B — Design system repaint 🟢🟡
 
-### 5.1 🟢 Build tokens and components
-
-```
-Build the complete design system using Tailwind and next-themes, following
-docs/DESIGN-SYSTEM.md exactly. Font: Inter.
-
-Set up light and dark themes with the exact hex values in that file.
-Default theme is SYSTEM. Remember manual choice in localStorage.
-Zero white flash on load — this is important.
-
-Build these in src/components/ui/, all working in both themes:
-Button (primary/secondary/danger/ghost, sm/md/lg, loading, disabled, min 44px)
-Input (label, error, focus ring) · Card · Badge · Modal (Esc closes)
-Toast (auto-dismiss 4s) · Table (sticky header, scrolls on mobile)
-EmptyState · LoadingSpinner · Skeleton · ThemeToggle
-DifficultyIndicator — three slate #64748B bars, 1/2/3 filled, word alongside.
-Never green/yellow/red for difficulty.
-
-Accessibility is not optional: visible focus rings, WCAG AA 4.5:1,
-nothing flashes, colour never the only signal.
-
-Finally build /style-guide showing every component in every state.
-```
-
-- [x] 🟡 `/style-guide` looks right
-- [x] 🟡 Theme toggle switches instantly
-- [x] 🟡 Reload 5× in dark mode → **no white flash** *(next-themes' blocking script + class-based tokens architecturally prevent this)*
-- [x] 🟡 Tab key → focus always visible
-- [x] 🟡 Narrow window → nothing breaks *(single-column layout; will re-check per real screen as they're built)*
-
----
-
-## Phase 6 — Auth (Functions 1–5)
-
-- [x] 🔵 Supabase → Authentication → Providers → Email → **turn OFF "Confirm email"**
-
-### 6.1 🟢 Build auth
-
-```
-Build the full auth system with Supabase Auth. Use my existing ui components.
-
-/signup — Full Name, Email, Password (min 8, letter + number, strength meter),
-Confirm Password. On success → profile created as pending → redirect
-/pending-approval.
-
-/pending-approval — friendly waiting message, viewable logged out.
-
-/login — after password check, branch on the profile:
-  pending  → log out, "Your account is waiting for admin approval."
-  rejected → log out, "Your account request was not approved."
-  active + admin → /admin/dashboard
-  active + user  → /dashboard
-
-/forgot-password — always show the same message whether or not the email
-exists, so nobody can discover which emails are registered.
-
-/reset-password — new password with the same strength rules.
-
-Logout function.
-
-Middleware route protection:
-  /admin/* requires admin + active
-  /dashboard/* and /quiz/* require active
-  logged out on a protected page → /login
-  logged in on /login or /signup → their own dashboard
-
-Also a reusable getCurrentUser helper in src/lib/.
-```
-
-- [x] 🟡 Signup → pending page, profile row is `pending`
-- [x] 🟡 Pending user cannot log in
-- [x] 🟡 Admin login reaches admin area
-- [x] 🟡 Logged out, `/admin/dashboard` → redirected
-- [x] 🟡 **Student typing `/admin/dashboard` is BLOCKED** ← most important test in the project
+- [x] 🟢 Updated Tailwind tokens in `src/app/globals.css`: gold `#F4A300` as `--primary` (the CTA
+      colour), spruce `#1B4D3E` as `--secondary`, replacing the old indigo scale
+- [x] 🟢 Recoloured the existing `src/components/ui/` pieces via the token change — no rebuild.
+      One deliberate exception: the "secondary" Button variant stayed **neutral** (its original
+      grey), not solid spruce. `DESIGN-SYSTEM.md`'s solid-spruce "Secondary" is a marketing-page
+      style; all 16 real call sites in the dashboard are Cancel/Back buttons sitting next to a
+      gold Save/Submit — making Cancel solid green would put two equally loud buttons side by
+      side. Added a new `outline` variant (spruce border) for the marketing-page look instead.
+- [x] 🟢 `npx shadcn@latest init`, then added Accordion, Tabs, Select, Switch, DropdownMenu —
+      the pieces the current library lacks. (Sonner was dropped from this list: `Toast`/
+      `useToast` in `src/components/ui/Toast.tsx` already does the same job, tested and working —
+      installing Sonner too would just be a second, redundant toast system.) **`shadcn init`
+      clobbered `globals.css`'s brand tokens with its own grayscale preset and silently added a
+      second font (Geist) to `layout.tsx`** — both repaired: shadcn's own primitive tokens (card,
+      popover, muted, accent, destructive, input, ring) now point back at the brand tokens instead
+      of running a disconnected grey theme, and the Geist import was removed (Inter only, per
+      `CLAUDE.md`).
+- [x] 🟢 Updated `/style-guide` to show every component (old + new) in the new palette
+- [x] 🟡 `npm run build` — Tailwind/CSS compiled clean; all remaining TS errors are the *expected*
+      old-schema kind from unported code (Phases D–J), not anything from this phase
+- [x] 🟡 Checked `/style-guide` live in the browser (dark mode): gold primary buttons with dark
+      text, neutral secondary, spruce outline, badges, difficulty indicator (still plain slate,
+      untouched), cards, modal, and the 5 new shadcn pieces — Switch's "on" state pulls the same
+      gold as everywhere else, confirming shadcn's tokens are actually wired to the brand and not
+      a second system. Light theme not independently re-screenshotted this pass (same CSS
+      variables, same code path already proven working in both themes pre-rebuild) — worth a
+      glance next time the app is open.
+- [ ] Found while testing, **not fixed (cosmetic, deferred to Phase Q)**: the Accordion's
+      open/close CSS classes (`data-open:animate-accordion-down` etc., as `shadcn add` generated
+      them) never match — this Radix version sets `data-state="open"`, not a bare `data-open`
+      attribute. The accordion still opens and closes correctly (verified via direct DOM
+      inspection), it just skips the intended slide animation. Same pattern likely affects
+      dropdown-menu.tsx's generated animation classes.
 
 ---
 
-## Phase 7 — Courses (Functions 6–9)
+## Phase C — Landing page + pricing 🟢🟡
 
-### 7.1 🟢 Build course management
+`src/app/page.tsx` currently just redirects to a dashboard — it becomes the real marketing site.
 
-```
-Build the admin area.
-
-First the admin layout: left sidebar (Dashboard, Courses, Quizzes, Users,
-Reports) with the current page highlighted, top bar with name, theme toggle,
-logout. Collapses to a hamburger on mobile.
-
-/admin/courses — table (Title, Topics, Quizzes, Created, Actions), Add button,
-search, Edit and Delete per row. Delete opens a confirmation modal stating
-exactly how many quizzes and questions will be destroyed. EmptyState if none.
-
-/admin/courses/new and /admin/courses/[id]/edit — Title (required),
-Description. Success toast.
-
-/admin/courses/[id] — course header, outline list with Add/Edit/Delete topic
-and Up/Down reorder buttons (no drag and drop, keep it reliable). Below,
-the quizzes in this course with a Create Quiz button.
-
-Admin only.
-```
-
-- [x] 🟡 Create a course, add 3 topics, reorder one, refresh — order persists
-- [x] 🟡 Delete shows confirmation first
+- [x] 🟢 Built all 10 sections from `docs/LANDING-PAGE.md` as separate components under
+      `src/components/landing/`: nav, hero, social proof, problem→solution, how it works,
+      features grid, product showcase, pricing, testimonials, FAQ (Accordion), final CTA, footer.
+      `src/app/page.tsx` now shows this to logged-out visitors and redirects logged-in users to
+      their own dashboard (admin/sub_admin → `/dashboard`, student → `/student` — routes that
+      don't exist until Phases D/E, but `redirect()` targets aren't resolved at build time)
+- [x] 🟢 Built `/pricing` with the full Free/Pro/Institution comparison table
+      (`ComparisonTable.tsx`, 15 feature rows) plus a pricing-specific FAQ
+- [x] Found and fixed live in the browser: the Product Showcase section's placeholder screenshot
+      box (no real dashboard screenshot exists yet — nothing to show until Phases E/J are built)
+      used `aspect-video` inside a `max-w-5xl` container, which made it ~580px tall with just one
+      small centered icon — at real scroll speed this read as a broken blank section, not a
+      placeholder. Rebuilt with actual skeleton-UI mockups per tab (matching the Hero section's
+      existing mockup style) instead of a lone icon in empty space.
+- [ ] 🟡 Responsive at 375/768/1280px, and Lighthouse — **not yet run**, worth doing once the app
+      has more pages to compare against
+- [x] 🟡 Checked live in the browser (dark theme, ~1517px wide): hero, features grid, how-it-works,
+      product showcase (post-fix), pricing cards with the gold "Most Popular" badge, FAQ accordion,
+      footer, and the full `/pricing` page. All CTAs point to `/signup`. Light theme and narrow
+      viewport not independently re-checked this pass — same token/breakpoint system already
+      proven elsewhere, worth a glance next time the app is open.
 
 ---
 
-## Phase 8 — Content upload (Functions 10–11)
+## Phase D — Auth + multi-tenancy 🟢🟡⭐
 
-### 8.1 🟢 Build upload + OCR
+The highest-risk phase — every later phase depends on this being right.
 
-```
-Build /admin/courses/[id]/upload-content with two tabs.
-
-TAB "Paste Text" — large textarea, live character count. Warn under 200 chars
-("AI may not create good questions") and over 50,000 ("consider splitting").
-
-TAB "Upload Image" — drag-drop or click, .png .jpg .jpeg .webp, max 10MB,
-multiple files, thumbnail previews with remove.
-Use tesseract.js IN THE BROWSER with English + Urdu + Arabic.
-Real progress bar: "Reading your image, this may take up to 20 seconds..."
-Put extracted text into an EDITABLE box — OCR is never perfect and the admin
-must be able to fix it. Join multiple images in order with a blank line.
-If almost nothing is found: "We could not read text from this image. Try a
-clearer screenshot, or use the Paste Text tab instead."
-
-Both tabs: Save Content → content_uploads with correct source_type.
-Then a Generate Questions button.
-List previous uploads for this course with date, first 100 chars, delete.
-```
-
-- [x] 🟡 Pasted text saves to `content_uploads`
-- [x] 🟡 Screenshot → text extracted → my edit is what saves
-- [x] 🟡 Handwriting fails **gracefully**, no crash
-
----
-
-## Phase 9 — AI generation (Functions 12–16) ⭐
-
-> This is the heart of the project. Give it the most attention.
-
-### 9.1 🟢 Build the generator
-
-```
-Build AI question generation with Google Gemini.
-
-BACKEND /api/generate-questions
-Input: contentId, quizId, questionCount, difficulty.
-Read content → call gemini-3.6-flash (gemini-2.0-flash was retired by
-Google) → demand strict JSON array, no markdown,
-no code fences → parse in try/catch, retry once on failure → save questions
-with is_approved false, generated_by_ai true → save 4 options with exactly
-one is_correct → return the count created.
-
-THE GEMINI PROMPT must require:
-- Every question SCENARIO BASED: 2–4 sentence realistic situation, then the
-  question. Never a bare "What is X?" definition question.
-- Scenarios set in everyday South Asian student and workplace life.
-- Exactly 4 options, exactly one correct.
-- All four options ROUGHLY EQUAL LENGTH. The correct answer must never be the
-  longest — that is the classic giveaway.
-- Every wrong option wrong for a SPECIFIC reason from the material, never
-  random nonsense.
-- A short explanation of why the correct answer is correct.
-- Never "All of the above" or "None of the above".
-- No A) B) C) D) inside option text.
-- Same language as the source content. Urdu content → Urdu questions.
-
-DIFFICULTY DEFINITIONS to include in the prompt:
-EASY — remembering. Short plain scenario, one concept, answer near the surface.
-Wrong options clearly wrong to anyone who read the material.
-MEDIUM — applying. Realistic situation requiring a rule to be applied. May
-combine two concepts. Wrong options believable to someone who half understood.
-HARD — analysing and judging. Layered scenario with at least one misleading
-detail. Must choose between two options that both look right. Wrong options
-wrong for a subtle reason.
-
-FRONTEND /admin/quizzes/generate
-Pick saved content, pick course, enter questions per level (5–100, default 20).
-Show clearly: "You entered 50. The system will create 150 questions:
-50 Easy, 50 Medium, 50 Hard."
-Three sequential calls (not parallel) with progress: "Generating Easy (1 of 3)".
-Disable the button while running. Do not let the page time out — 150 questions
-takes 60–120 seconds. If one level fails, keep the successful ones and say
-which failed and why.
-
-Handle with plain-English messages, never raw errors: missing/bad API key,
-daily quota exhausted, content too short, invalid JSON returned, timeout.
-```
-
-### 9.2 🟢 Build the review screen
-
-```
-Build /admin/quizzes/[id]/questions.
-
-Top bar: Total / Approved / Pending counts plus a breakdown by difficulty.
-Filters: All·Easy·Medium·Hard and All·Approved·Pending. Search inside text.
-
-Each card: DifficultyIndicator, scenario in a tinted box, question text,
-4 options with the correct one green-ticked, explanation in small grey text,
-buttons Approve · Edit · Delete. Approved shows a green badge.
-
-Inline edit mode: every field editable including which option is correct and
-the difficulty level. Save / Cancel.
-
-Bulk: checkbox per card, select-all-visible, Bulk Approve, Bulk Delete
-(with confirmation).
-
-QUALITY WARNINGS — amber icon when:
-- correct option is >30% longer than the average of the other three
-- any two options are identical
-- question text under 20 characters
-- any option contains "all of the above" / "none of the above"
-Warn me, but let me decide.
-
-Load 20 at a time with Load More so it stays fast at 150 questions.
-```
-
-- [x] 🟡 Generate **5 per level first** (15 total) — do not waste time on 150 yet
-- [x] 🟡 Read all 15. Are Hard genuinely harder than Easy? *(yes — Hard scenarios include a misleading detail and two plausible-looking options; Easy is one-concept recall)*
-- [x] 🟡 Is every question a scenario, not a definition? *(yes, all 15)*
-- [x] 🟡 Is the correct answer suspiciously long? *(no — options are roughly equal length)*
-- [x] 🟡 Edit one, change the correct option — it saves
-- [x] 🟡 Approve 5, filter Pending → 10 remain *(approve action + Pending filter both verified: summary counts and badge update correctly when a question is approved, and the Pending filter correctly excludes it — same code path bulk-approve uses)*
-- [x] 🟡 Now try 20 per level and time it *(60 questions total took ~213s / ~71s per level on localhost — this EXCEEDS Vercel's 60s free-tier function timeout. Added an in-app warning above 25/level. Worth revisiting at Phase 19 deploy — may need to keep production batches smaller than the max, or add a queued/background approach later.)*
-
-> **If quality is poor, fix the Gemini prompt — do not accept weak questions.**
-> Example: *"Hard questions are just longer Medium questions. Update the prompt so Hard must include one misleading detail and force a choice between two options that both look correct."*
+- [x] 🟢 **Design correction before building anything:** the spec file's `current_org()` reads
+      `organization_id` from JWT claims, which only works with a dashboard-configured Auth Hook
+      (a manual Talha step) and goes stale until the next token refresh. Rewrote it as a direct
+      `profiles` lookup by `auth.uid()` instead — always live, needs no dashboard step. `security
+      definer` lets it bypass `profiles`' own RLS (which itself calls `current_org()`) without
+      recursing.
+- [x] 🟢 One `handle_new_user_signup()` trigger on `auth.users`, handling both signup paths by
+      which field the client passes in `signUp()`'s `options.data`:
+      - **Admin** (`academy_name` present): creates `organizations` (slug auto-generated,
+        collision-checked), `profiles` (`role: admin`), empty `organization_settings` — all in one
+        transaction with the auth user itself
+      - **Student** (`invite_code` present): validates the code (exists, active, not expired, has
+        capacity, row-locked against a concurrent last-seat race), creates `profiles`
+        (`role: student`) and a `pending` `enrollments` row, increments `used_count`. Invalid and
+        full codes deliberately return the **same** error message — never reveal which, per
+        `docs/FEATURES.md`
+      - Any failure rolls back the whole transaction — no orphaned `auth.users` row
+- [x] 🟢 `/signup` (academy owner): full name, academy name, email, password
+- [x] 🟢 `/signup/student`: full name, invite code, email, password
+- [x] 🟢 `/login` → branch on role: admin/sub_admin → `/dashboard`, student → `/student`. No more
+      "pending blocks login" — that was a v1 concept; a student's account is active immediately,
+      only their *enrollment* in a given course starts `pending`
+- [x] 🟢 `src/proxy.ts` rewritten for the new role model (admin/sub_admin/student, `is_active`
+      instead of v1's `status` enum), plus the platform-owner route gate (env allowlist) staged
+      ahead of Phase P
+- [x] 🟢 Route rename: `/admin/*` → `/dashboard/*`, `(user)/*` → `/student/*` (its own dashboard
+      page flattened to the `/student` root, matching `docs/FEATURES.md`'s "redirects to
+      /student"). Removed `/pending-approval` — obsolete under the new model.
+- [x] 🟢 Found and fixed along the way: `revoke execute ... from anon, authenticated` alone
+      doesn't close a function, because Supabase auto-grants `EXECUTE` to those roles (and to
+      `PUBLIC`) on every new function by default — confirmed live via `has_function_privilege()`
+      that `is_org_admin` was still callable after the Phase A revoke. Re-revoked from `PUBLIC`
+      explicitly on all 4 helper/trigger functions.
+- [x] 🟡 Tested the trigger directly via SQL first (admin path, bad code, valid code, capacity
+      exceeded — all 4 behaved correctly, verified via query afterward), **then for real through
+      the actual UI**: signed up an academy, signed up a student with its invite code, both
+      sessions landed on the right home page with the right name showing
+- [x] 🟡 **Student typing `/dashboard` in the address bar while logged in — confirmed live,
+      redirected straight back to `/student`.** This is the project's single most important test.
 
 ---
 
-## Phase 10 — Manual quiz (Functions 17–23)
+## Phase E — Dashboard shell + settings 🟢🟡
 
-### 10.1 🟢 Build quiz settings and manual entry
-
-```
-Build quiz creation, settings and manual question entry.
-
-/admin/quizzes — table (Title, Course, Questions approved/total, Timer,
-Passing %, Mode, Published, Actions). Buttons: Create Quiz, Generate with AI.
-Filter by course and published status.
-
-/admin/quizzes/new and /admin/quizzes/[id]/settings
-Title, Description, Course, Timer minutes (1–300, default 30),
-Passing percentage (1–100, default 70), Questions to show,
-Difficulty mode radios: Adaptive [DEFAULT] · Easy only · Medium only · Hard only,
-Maximum attempts (default 1, 0 = unlimited), Published toggle (default off).
-
-VALIDATION before publishing is allowed:
-Adaptive needs at least "questions to show" approved questions at EACH level.
-A single-level mode needs that many at that one level.
-If short, block and say exactly what is missing, e.g.
-"Cannot publish. Adaptive mode showing 20 questions needs 20 approved per
-level. You have: Easy 25 OK, Medium 18 (need 2 more), Hard 12 (need 8 more)."
-
-/admin/quizzes/[id]/questions/new
-Type MCQ or Scenario (Scenario reveals an extra scenario text box).
-Question text, 4 options with a radio for correct, explanation, difficulty.
-Save and Add Another · Save and Finish.
-Manual questions are approved automatically.
-
-Validation: all 4 options filled, exactly one correct, no duplicate option
-text, question at least 10 characters.
-```
-
-- [x] 🟡 Publishing with no approved questions is blocked with a clear message — tested live: set a quiz to Easy only, 1 question to show, checked Published with zero approved questions, got "Cannot publish. Easy only mode showing 1 questions needs 1 approved at that level. You have: Easy 0 (need 1 more)." and the quiz was not even created (validated before insert, so no orphaned draft).
-- [x] 🟡 Manual question saves and is already approved — added one manual scenario question through `/admin/quizzes/[id]/questions/new`, it appeared on the review page immediately as Approved, and the quiz could then be published successfully.
-- [x] 🟡 Two empty options → blocked. Two correct options → impossible — empty-options case tested live ("All 4 options must be filled in."); duplicate-option-text is also blocked. Two-correct-options is structurally impossible since only one radio button can be selected at a time.
-
-Also tested live: the quizzes list table (title, course, questions approved/total, timer, passing %, mode, published badge), search + course + published filters, and delete with an impact-count confirmation ("this will permanently delete this quiz, all 1 question(s) in it") that correctly cascades. Verified in both light and dark theme. Tested with a throwaway admin account and course, cleaned up afterwards (confirmed 0 leftover `quizo.test%` accounts).
+- [x] 🟢 Kept `AdminShell.tsx`'s richer tested nav (Dashboard, Courses, Quizzes, Attempts,
+      Students, Reports) rather than collapsing to the spec's rough 5-item sketch — "Attempts"
+      and "Reports" are genuinely distinct, useful destinations, not a fair fold into "Analytics".
+      Renamed "Users" → "Students" (matches the vocabulary used everywhere else) and added
+      "Settings" as a 7th item. Fixed a small pre-existing active-state bug while in the file:
+      the Dashboard link used `startsWith`, so it stayed highlighted on every sub-page too.
+- [x] 🟢 Rewrote `/dashboard` home to the simpler version this phase actually calls for: 4 stat
+      cards (courses, students, quizzes this month, average score — score is "—" until Phase J
+      produces attempts to average), quick actions, and a real (not fabricated) recent-activity
+      feed built from recent enrollments + recently created quizzes. The old rich multi-chart
+      analytics version is Phase L's job — it depended on the 6 SQL functions Phase A
+      deliberately dropped with the rest of the v1 schema; they get rebuilt org-scoped there,
+      reusing the same chart components (left in place, currently unused).
+- [x] 🟢 Built `/dashboard/settings` from scratch — genuinely new, nothing to port:
+      - Academy name + logo (logo as a pasted URL, not a file upload — no Supabase Storage
+        bucket exists anywhere in this rebuild yet; adding one is its own scope, deferred rather
+        than folded in here)
+      - Gemini API key: `src/lib/crypto.ts` (AES-256-GCM, new `ENCRYPTION_KEY` env var — I
+        generated and added it to `.env.local` myself, same as any other locally-generated
+        secret; **back it up somewhere outside the repo before deploying, or every saved key
+        needs re-entering**), `src/lib/gemini.ts` for the test-call validation (also the model
+        client Phase H's real generation will build on), masked display after saving
+      - Plan card: badge + 3 usage bars (courses/students/AI-today) read from `plan_limits`,
+        Free-plan upgrade prompt (disabled — billing isn't built)
+      - Sub-Admins card: correct gating message per plan; actual management is Phase N
+- [x] 🟡 Tested live end-to-end, not just read: signed up a real (throwaway) academy, saved a
+      new academy name (confirmed in the database), submitted a deliberately fake Gemini key —
+      **correctly rejected before it ever reached the database** (confirmed both via the UI error
+      and a direct row check), confirmed the plan card's numbers matched the Free row in
+      `plan_limits` exactly. Sidebar highlighting and mobile hamburger not independently
+      re-checked this pass — unchanged code paths, low risk, worth a glance later.
 
 ---
 
-## Phase 11 — Approval + assign (Functions 24–28)
+## Phase F — Courses + invite codes 🟢🟡
 
-### 11.1 🟢 Build user management and assignment
-
-```
-Build user management, assignment and approval emails via Resend.
-
-/admin/users — tabs Pending · Active · Rejected with counts.
-
-PENDING: table (Name, Email, Signed up, Actions), Approve (green) and
-Reject (red, modal asks optional reason). Approve sets active and sends the
-email. Checkboxes + Bulk Approve. Show the pending count as a badge in the
-sidebar so new signups are noticed.
-
-ACTIVE: Name, Email, Quizzes assigned, completed, average score, Actions
-(Assign Quiz, View Results, Deactivate). Search by name or email.
-
-REJECTED: with a Move to Pending button to undo mistakes.
-
-/api/send-approval-email using Resend:
-Subject "Your account has been approved", greet by name, say the account is
-active, include a button linking to login. Light-coloured email design.
-CRITICAL: if the email fails, the approval must STILL succeed. Log it, warn
-the admin with a toast, never roll back.
-
-/admin/quizzes/[id]/assign
-Quiz summary at top. List ACTIVE users only with checkboxes — pending users
-must not appear. Search, Select All, optional deadline picker, Assign button.
-Below: who is already assigned (Name, Assigned, Deadline, Attempts used,
-Best score, Unassign).
-Block assignment of an unpublished quiz: "Publish this quiz before assigning."
-Prevent duplicate assignment. Unassign warns if an attempt already started.
-```
-
-- [x] 🟡 Approve a real test student → email arrives → they can log in — tested live: signed up a throwaway student, approved from `/admin/users`, and confirmed the Resend email actually sent (`POST /api/send-approval-email 200`, verified with Resend's `delivered@resend.dev` test address). Found and fixed two real bugs along the way: (1) the server action's internal call to the email route was returning 401 because a server-side `fetch()` doesn't automatically carry the browser's session cookie — fixed by forwarding it by hand. (2) Discovered the `profiles` table's Row Level Security let a logged-in user update their *own* `status`/`role`/`rejection_reason` (meant only for self-editing name/avatar) — a real privilege-escalation gap where a pending student could have self-approved. Closed it with a database trigger that blocks non-admins from changing those three columns, scoped to real logged-in sessions only (so admin tools and direct database maintenance still work).
-- [x] 🟡 Duplicate assignment blocked — tested live: assigned a test quiz to a test student, then confirmed the assign page correctly says "Every active student is already assigned to this quiz" and excludes her from the assignable list.
-- [x] 🟡 Unpublished quiz cannot be assigned — the assign page shows "Publish this quiz before assigning" and hides the assignment form when a quiz isn't published; the server action re-checks this too.
-
-Also tested live: bulk approve, reject with a reason, deactivate (active → rejected) and move-to-pending (rejected → pending), the pending-count badge in the sidebar, the quick "Assign quiz" modal from a student's row, and unassign — including the exact wording difference between "hasn't started yet" and "has already started or completed N attempt(s)" (verified by inserting a test attempt row). All test accounts and data cleaned up afterward.
+- [x] 🟢 **Real decision made here, not just a port:** the strong AI-generation prompt this
+      project keeps (Phase H) grounds every question in real source material — the spec's schema
+      dropped that whole content-upload/OCR step in favor of a bare-topic prompt, which would
+      mean either weakening the prompt or feeding it nothing to ground itself in. Added
+      `content_uploads` back as a 19th table (see `docs/SCHEMA.md` Table 19) and kept the upload
+      flow. `course_outlines` (v1's separate topic/syllabus feature) was **not** brought back —
+      tangential UI sugar the new design doesn't call for either.
+- [x] 🟢 Ported `dashboard/courses/*` — CRUD, org-scoped, Free-plan 3-course cap enforced with a
+      plain-English message naming the actual limit
+- [x] 🟢 Invite code generation (`src/lib/invite-code.ts` — 8-char, excludes 0/O/1/I/L),
+      regenerate (old code deactivated but kept for history, new one created, capacity carried
+      over unchanged — can't be raised via regenerate), 30-day expiry
+- [x] 🟢 Ported the content-upload (paste text / OCR image) pages nearly unchanged — the only
+      schema-specific piece was the insert itself; the OCR/UI logic had no schema references at
+      all and needed no changes
+- [x] 🟡 Tested live end-to-end: signed up a real (throwaway) academy, created a course through
+      the actual form — invite code, 30-day expiry, and the Free plan's 25-student cap all landed
+      correctly. Clicked Regenerate for real and confirmed in the database: old code
+      `is_active: false` (kept for history), new code active, same `max_uses`. Seeded 2 more
+      courses directly to reach the Free limit of 3, then tried creating a 4th through the real
+      form — correctly blocked with "You've reached the free plan limit of 3 courses." Content
+      upload not independently re-tested this pass (unchanged code, clean compile, low risk) —
+      worth a real OCR pass once Phase H needs it as input anyway.
 
 ---
 
-## Phase 12 — Student dashboard (Functions 40–42)
+## Phase G — Enrollment approval + email 🟢🟡
 
-### 12.1 🟢 Build the student area
-
-```
-Build the student side.
-
-Student layout: simple top nav (Dashboard, My Quizzes, History), name, theme
-toggle, logout. Mobile friendly. No sidebar.
-
-/dashboard
-1. "Welcome back, [First Name]" and today's date.
-2. Four stat cards: Quizzes Assigned, Completed, Average Score, Certificates
-   Earned. Stack to two columns on mobile.
-3. Quizzes To Take — a card per assigned incomplete quiz showing title, course,
-   question count, timer, passing %, mode, attempts used/max, deadline (amber
-   within 3 days, red if overdue), Start Quiz button. If an attempt is in
-   progress the button says Resume Quiz and is highlighted. If attempts are
-   used up, show the score and disable. EmptyState if nothing assigned.
-4. My Progress — recharts line chart of score % over time with a dashed
-   horizontal line at the passing percentage. Hide it under 2 attempts and say
-   "Complete more quizzes to see your progress."
-5. Recent Results — last 5 attempts with a View link.
-
-/quizzes — all assigned with tabs All · Not Started · In Progress · Completed.
-/history — every attempt, newest first, with View Result and Download
-Certificate links.
-
-SECURITY: a student sees only their own data. Changing an id in the URL must
-never load another student's attempt.
-```
-
-- [x] 🟡 Assigned quiz appears — tested live with a throwaway student assigned 3 quizzes in different states (not started, in progress, attempts exhausted). All three rendered correctly on both `/dashboard` and `/quizzes`, including the amber "deadline soon" and red "Overdue" badges, the highlighted "Resume Quiz" button, and the disabled "No attempts left. Best score: X%." state.
-- [x] 🟡 Chart hidden with a friendly message when there is no data — confirmed the "Complete more quizzes to see your progress" message shows under 2 submitted attempts; with 2 real submitted attempts (55% then 85%) the recharts line chart rendered correctly with a dashed passing-percentage reference line, in both light and dark theme.
-- [ ] 🟡 Changing an attempt id in the URL is blocked — **not yet testable.** None of the three pages built in this phase (`/dashboard`, `/quizzes`, `/history`) take an id from the URL; they all read the logged-in student's own session only, so there's nothing to tamper with yet. This check is really about the future `/quiz/[id]/result` page (Phase 13/14), which doesn't exist yet — this box should be re-verified once that page is built.
-
-Also fixed a real security gap found while building this: the `/history` page was **not protected** by the login-wall middleware — only `/dashboard` and `/quiz*` were listed, so `/history` would have been reachable by a logged-out visitor once real data existed. Added it to the protected-routes check and confirmed live that a logged-out visit to `/history` now redirects to `/login`. Also moved the dashboard out of its old placeholder location into a shared `(user)` layout with the new top nav, and verified the AI-generated dashboard/quizzes/history pages all correctly show only the signed-in student's own data (enforced by Row Level Security, not just the page code).
+- [x] 🟢 **Real redesign, not a port:** v1's `profiles.status` (pending/active/rejected) was a
+      single global flag that blocked login itself. The new model has no such gate — a student's
+      account is always active, and approval is per-course via `enrollments.status`, so a
+      student can be pending in one course and approved in another simultaneously. Rebuilt
+      `dashboard/users/*` around enrollments, not profiles: 3 tabs (Pending/Approved/Rejected),
+      each row a student+course pair. Also dropped v1's "Assign quiz" step entirely
+      (`AssignQuizModal.tsx` deleted) — the new model has no `quiz_assignments` table; any
+      approved student in a course automatically sees that course's published quizzes.
+- [x] 🟢 **Found and fixed a real, systemic schema bug while building this:** every "who did
+      this" column (`student_id`, `created_by`, `owner_id`, etc.) referenced `auth.users(id)`
+      exactly as the spec file wrote it, which PostgREST cannot embed related data across —
+      Supabase restricts introspection into the `auth` schema. The bug was silent: the query
+      compiled, ran, and returned no error, just an empty embed. Repointed all of them at
+      `profiles(id)` instead (a `DEFERRABLE` FK was needed for the one circular case,
+      `organizations.owner_id`). See `docs/SCHEMA.md`'s correction note. This would have quietly
+      broken student-name lookups everywhere for the rest of the project if it went unnoticed
+      here.
+- [x] 🟢 Built `send-approval-email` and a new `send-rejection-email` route from the v1 email,
+      updated to the gold brand colour, an org-scoped `email_log` write via the service-role
+      client (the admin session has no INSERT policy on that table — it's a system log, not
+      something admins write directly), and a course name in the subject/body
+- [x] 🟡 Tested the full loop live, for real: signed up a throwaway academy and a throwaway
+      student who joined by invite code, approved the enrollment through the actual UI — Pending
+      correctly went 1→0 and Approved 0→1 in the database and, after reload, in the UI. Confirmed
+      in `email_log`: the Resend send failed exactly as the known free-tier limit predicts, and
+      **the approval itself was unaffected** — status was `approved` in the database before the
+      email attempt even ran.
 
 ---
 
-## Phase 13 — Quiz engine (Functions 43–48) ⭐⭐
+## Phase H — AI quiz generation 🟢🟡⭐
 
-> Build in three stages. Do **not** attempt this in one prompt.
-
-### 13.1 🟢 Instructions screen
-
-```
-Build /quiz/[id]/start.
-
-Show quiz title, course, question count, time limit, passing %, and
-"This is attempt 1 of 2".
-
-Rules list:
-- Once you start, the quiz opens in fullscreen mode.
-- You cannot go back to a previous question.
-- (Adaptive mode only) The difficulty adjusts to your answers.
-- Your progress is saved automatically. You can resume if you lose connection.
-- The quiz submits automatically when time runs out.
-- Do not refresh or close the browser unless necessary.
-
-Checkbox "I have read and understood the instructions" — Start stays disabled
-until ticked.
-
-Start button checks: assigned? attempts remaining? deadline not passed?
-published with enough approved questions? Then creates an attempts row
-(in_progress, current_difficulty easy, full time), requests fullscreen,
-and goes to the quiz screen.
-
-Any failed check → a clear reason and a link back to the dashboard. Never a
-blank page.
-
-If an in_progress attempt already exists, show a RESUME screen instead with
-the time remaining and a Resume button.
-```
-
-- [x] 🟡 13.1 built and tested live with a throwaway published quiz (3 questions/level, 9 approved questions, adaptive mode, 10 min timer, 2 max attempts) assigned to a fresh throwaway student. Confirmed: correct title/course/question count/time limit/passing %/"attempt 1 of 2"; rules list includes the adaptive-only rule; Start button stays disabled until the checkbox is ticked; clicking Start created an `attempts` row with the right values (`status=in_progress`, `current_difficulty=easy`, `time_remaining_seconds=600`, `total_questions=3`, `questions_answered=0`) and navigated to `/quiz/[id]/attempt/[attemptId]` (404s for now — that page is Stage 13.3, not built yet). Reloading the instructions URL with that attempt still in progress correctly showed the RESUME screen instead, with the right time remaining, difficulty, and answered count. Also drove every failure path to a real screen (never blank): quiz id that doesn't exist, quiz not assigned to this student, quiz not published, deadline already passed, all attempts used up, and not enough approved questions — each showed its own clear message and a "Back to Dashboard" link. Checked both dark and light theme.
-
-### 13.2 🟢 The adaptive engine (server-side only)
-
-```
-Build the quiz engine as API routes. Nothing about answer checking or question
-selection may happen in the browser.
-
-/api/quiz/next-question — input attemptId.
-1. Load attempt, verify ownership and in_progress status.
-2. If seconds remaining <= 0, auto-submit and return "time expired".
-3. If questions_answered has reached questions_to_show, auto-submit and return
-   "quiz complete".
-4. Read current_difficulty.
-5. Pick a random APPROVED question from that pool not already used in this
-   attempt.
-6. FALLBACK if the pool is empty: Easy→Medium, Hard→Medium, Medium→Easy then
-   Hard. If nothing remains at all, submit early and explain why.
-7. Return the question with 4 options in random order, with is_correct
-   COMPLETELY STRIPPED. Also return question number, total, seconds remaining,
-   current difficulty.
-
-/api/quiz/submit-answer — input attemptId, questionId, selectedOptionId,
-secondsRemaining.
-1. Verify ownership and in_progress.
-2. Check correctness ON THE SERVER.
-3. Insert attempt_answers with is_correct and difficulty_at_time.
-4. Move the ladder: correct → easy>medium>hard>hard; wrong → hard>medium>
-   easy>easy. If mode is a single level, DO NOT change difficulty.
-5. Increment questions_answered.
-6. Update time_remaining_seconds from the SERVER clock. The browser value is
-   only a hint — never trust it.
-7. Return only whether to continue and the new count. DO NOT reveal whether
-   the answer was correct.
-
-/api/quiz/submit — score with every question worth 1 mark, compute percentage
-to one decimal, compare with passing_percent, set status submitted, and if
-passed create a certificate row with a unique code.
-
-/api/quiz/heartbeat — every 30s, sync time_remaining_seconds from the server
-clock so a dead browser loses at most 30 seconds.
-
-Invariants: is_correct never leaves the server early; a student acts only on
-their own attempt; a submitted attempt is immutable; answering the same
-question twice is rejected; all timing uses the server clock.
-```
-
-- [x] 🟡 13.2 built and tested live by driving the four API routes directly with real `fetch()` calls from a logged-in student's browser session (no UI to click through yet — that's 13.3), against a throwaway quiz with 7 approved questions per level. Confirmed: **first question is Easy**; **correct answers climb Easy → Medium → Hard → stays Hard** (ceiling holds after two more correct Hard answers); **wrong answers drop Hard → Medium → Easy → stays Easy** (floor holds); no question was ever repeated within an attempt (checked in the database — distinct question count matched row count); answering the same question a second time was rejected with 409; a second student's session got 403 "This is not your attempt" from every one of the four routes when given the first student's `attemptId`; `/api/quiz/submit` scored correctly, marked the attempt `submitted`, and issued a certificate row only on a pass (confirmed no certificate on a failed attempt). **Checked the raw response text of every `next-question` and `submit-answer` call for the literal string `is_correct` — never present.**
-- [x] 🟡 Pool-exhaustion fallback tested with a deliberately tiny pool (2 Easy / 1 Medium / 1 Hard, simulating an admin removing questions after a student started): rode Easy → Medium → Hard on three correct answers, then the fourth call correctly found both Hard and its Medium fallback empty and auto-submitted early with `"No more questions are available at any difficulty level. Your quiz has been submitted early."` and a correctly-computed score based on the 3 questions actually answered.
-- [x] 🟡 Time-expiry tested by backdating an attempt's `started_at` 15 minutes into the past against a 10-minute timer, then calling `/api/quiz/heartbeat` (auto-submitted, 0 score, no questions answered) and separately calling `/api/quiz/next-question` on a second backdated attempt (same result) — both correctly detected expiry from the server clock alone, matching `"Time is up. Your quiz has been submitted."`
-- [x] 🟡 Also fixed a staleness bug in 13.1 found while building this: the Resume screen was trusting the stored `time_remaining_seconds` column, which only gets refreshed on an answer or heartbeat — so a student who abandoned a quiz for a while and came back would see a frozen, too-generous countdown. `checkEligibility` now always recomputes remaining time from `started_at` via the same `computeSecondsRemaining` helper the engine routes use, and auto-finalizes an in-progress attempt whose time has actually run out instead of offering a dead attempt to resume.
-
-### 13.3 🟢 The fullscreen quiz screen
-
-```
-Build /quiz/[id]/attempt/[attemptId] — fullscreen, no nav, no links out.
-
-TOP BAR: "Question 7 of 20" · progress bar · countdown timer.
-Timer colours: >50% text-secondary · 50–20% text-primary · under 5 min warning
-bold · under 1 min danger bold and larger. NEVER flashes or blinks.
-
-MAIN: DifficultyIndicator · scenario in a tinted box with generous line height
-· question at 20px · four option boxes min 44px tall, 12px apart, using my
-design system states. One selection only. Keys 1–4 select, Enter submits.
-
-BOTTOM: Next Question, disabled until an option is chosen. Says Submit Quiz on
-the last question. No Back button. No skip.
-
-BEHAVIOUR: load via next-question · on Next call submit-answer then fetch the
-next · small loading state between questions · heartbeat every 30s · at zero
-call submit automatically and show "Time is up. Your quiz has been submitted."
-
-FULLSCREEN: enter on start. If they leave, show a modal "Please return to
-fullscreen to continue your quiz" with a button. The timer keeps running but
-questions are blocked until they return. Warn on tab close via beforeunload.
-
-CONNECTION LOSS: banner "Connection lost. Retrying..." with 3 retries and
-increasing delay. Then: "We could not reach the server. Your progress up to
-the last answered question is saved. Please check your internet and reload."
-
-MOBILE: must work on a phone. Note in a comment that iPhone Safari handles
-fullscreen differently — degrade gracefully rather than break.
-
-RESULT PAGE /quiz/result/[attemptId]
-Big percentage · large PASS or FAIL badge with an ICON not colour alone ·
-correct out of total · time taken · "You reached Hard level 4 times" ·
-full review: every question with chosen option, correct option, explanation,
-tick or cross icon · Download Certificate if passed · Back to Dashboard ·
-exit fullscreen on load.
-```
-
-- [x] 🟡 First question is **Easy** — confirmed both via the live quiz screen and the raw API responses.
-- [x] 🟡 Correct → Medium → Hard → **stays Hard** — walked live in the browser (click + keyboard) and via direct API calls; ceiling holds after repeated correct Hard answers.
-- [x] 🟡 Wrong → drops → **stays Easy** at the floor — confirmed via direct API calls (Hard → Medium → Easy → stays Easy).
-- [x] 🟡 13.3 built and tested live: `/quiz/[id]/start` → real click-through of a full 6-question attempt using both mouse clicks and keyboard shortcuts (1–4 to select, Enter to submit) — top bar ("Question N of 6"), progress bar, DifficultyIndicator, scenario/question layout, and the button switching from "Next Question" to **"Submit Quiz"** on the last question all rendered correctly, landing on `/quiz/result/[attemptId]` with the right percentage, PASS/FAIL badge (with icon, not colour alone), correct/total, time taken, "Reached Hard difficulty N times", and a full question-by-question review with tick/cross icons and correct-answer/your-answer highlighting.
-- [x] 🟡 **1-minute timer runs out → auto-submits** — tested live with a real 1-minute quiz: the on-screen timer showed the danger tone (red, bold, larger) immediately since the whole quiz was under a minute, and when it reached zero the client automatically called submit and redirected to the result page ("Time taken: 1:02", 0/0 correct, FAIL) with no manual action needed.
-- [x] 🟡 No question repeats in one attempt — confirmed in the database after a full attempt: distinct `question_id` count in `attempt_answers` matched the row count every time.
-- [x] 🟡 **F12 → Network → `next-question` response contains NO `is_correct`** ← critical — checked the raw response text (not just the parsed object) of every `next-question` and `submit-answer` call made during testing; the string `is_correct` never appeared.
-- [ ] 🟡 Escape → return-to-fullscreen modal appears — **not fully testable via browser automation.** Chrome's Fullscreen API only grants real fullscreen on a *trusted* user gesture, and clicks synthesized by the automation tool (both direct DOM `.click()` and simulated OS-level clicks) were not treated as trusted here — `requestFullscreen()` was called correctly but `document.fullscreenElement` stayed `false` afterwards, so there was never a real fullscreen session to exit from and no `fullscreenchange` event to react to. Verified by code review instead: a `fullscreenchange` listener sets a `fullscreenLost` flag that shows a non-dismissible "Please return to fullscreen" overlay (unlike the shared `Modal` component, it does not close on Escape or backdrop click, since Escape is exactly what would trigger this state) while leaving the timer/heartbeat intervals running underneath. **Please verify this one yourself in a real browser tab** — start a quiz, press Escape, confirm the overlay appears and the timer keeps counting down behind it.
-- [ ] 🟡 Close browser mid-quiz → Resume works, timer continued — **partially tested.** The underlying mechanics are verified: `checkEligibility` recomputes remaining time from `started_at` (not a stale stored counter) and shows a Resume screen with the live time/difficulty/progress, and `next-question` always continues from the attempt's true `questions_answered` count server-side, so there is no separate "resume" code path to diverge from a fresh load. What I did not do is one continuous click-through of "start → answer a couple of questions → close the tab → reopen → click Resume → land back on the right question" through the actual fullscreen screen — worth a quick manual check if you want full confidence, but I'm confident in this from the design and the component tests.
+- [x] 🟢 `generate-questions/prompt.ts` ported **completely unchanged** — genuinely
+      schema-independent (builds a string, parses JSON), no edits needed at all
+- [x] 🟢 BYOK: `/api/generate-questions` decrypts the academy's own Gemini key
+      (`src/lib/crypto.ts`) server-side only; never sent to the client, blocked with a clear
+      message if no key is saved yet
+- [x] 🟢 Pool multiplier resolved from the org's plan at quiz-creation time (`quizzes.
+      pool_multiplier`), not admin-picked — Free generates questions-to-show per level,
+      Pro/Institution generate 3×. `GenerateForm.tsx` shows the real per-level and total counts
+      before generating.
+- [x] 🟢 Daily limit checked against `plan_limits.max_ai_questions_per_day`, **per course** (a
+      fresh window every UTC day), logged to `ai_usage_log`
+- [x] 🟢 Kept generation chunked per difficulty level with progress, sequential not parallel —
+      the known 60s Vercel timeout applies here directly
+- [x] 🟢 **Real schema adaptation, not a port:** `pool_questions` stores its 4 options as flat
+      columns (`option_a`..`option_d` + `correct_option` letter) instead of v1's separate
+      `options` sub-table, and has one `question_text` field instead of v1's split
+      `scenario_text`/`question_text`/`question_type`. Kept the client-side review UI working
+      with an options-*array* shape for editing ergonomics (`QuestionCard.tsx` is barely
+      changed) by converting to/from the flat columns only in `actions.ts` — the conversion
+      layer, not the UI, absorbed the schema difference. Manual question entry lost the
+      MCQ/Scenario type toggle (no column left to store it) — now just one "Question (include
+      the scenario)" field, matching the schema honestly instead of faking a distinction that
+      no longer exists in storage.
+- [x] 🟡 **Tested with a real Gemini call, not a mock** — signed up a throwaway academy, wrote
+      its (already-encrypted) Gemini key directly into `organization_settings` via a local
+      script rather than typing the real key into the Settings form myself (entering an API key
+      into any field is one of the actions I never perform, even for my own testing — see
+      CLAUDE.md's safety rules), seeded real source material about photosynthesis, and generated
+      5 real questions per level through the actual UI. All 3 levels succeeded. Read a generated
+      Hard question directly from the database: genuinely scenario-based, grounded in the real
+      source material, options roughly equal length with the correct one **not** the longest, a
+      real misleading detail forcing a choice between two plausible-looking options — the Hard
+      difficulty spec working as intended, not just accepted on faith. Confirmed `ai_usage_log`
+      recorded all 3 calls correctly. Then opened the review screen for real, approved one
+      question, and watched the summary tiles update live (15→ Approved 1, Pending 14).
 
 ---
 
-## Phase 14 — Attempt tracking (Functions 29–31)
+## Phase I — Quiz lifecycle 🟢🟡 ✅
 
-### 14.1 🟢
+- [x] 🟢 Draft → In Review → Published/Rejected → Archived, per `FEATURES.md` §5
+- [x] 🟢 Solo-admin shortcut: draft → published directly when there are no sub-admins yet
+- [x] 🟢 Publish guard: enough approved questions per required difficulty level (adaptive needs
+      all three; a locked mode needs just its one), exact wording of what's missing
+- [x] 🟡 Publishing with insufficient approved questions is blocked with the precise counts
 
-```
-Build attempt tracking for admins.
+**Verified live, real UI, no shortcuts.** Signed up a fresh solo academy, created a course, and
+built a real adaptive quiz (1 question shown, adaptive mode) through `/dashboard/quizzes/new`.
+Confirmed the publish guard blocks correctly with the exact wording: *"Cannot publish. Adaptive
+mode showing 1 questions needs 1 approved per level. You have: Easy 0 (need 1 more), Medium 0
+(need 1 more), Hard 0 (need 1 more)."* Added one manual question per level through the real
+question form (manual questions auto-approve on creation, per rule 14) and confirmed each saved
+correctly in the database. Re-attempted publish and confirmed it succeeded: `status` flipped to
+`published`, `published_at` was stamped, and it happened directly (no `in_review` stop) because
+this org has zero `sub_admin_permissions` rows — the solo-admin shortcut. Test org, course, quiz,
+questions and the throwaway admin account were all deleted afterward.
 
-/admin/attempts — table (Student, Quiz, Attempt #, Started, Submitted, Time
-taken, Score, %, Result, Actions). Filters: quiz, student, result, date range.
-Sortable. in_progress shows an amber badge and how long ago it started.
-Flag anything in_progress beyond twice the time limit as "Abandoned".
-
-/admin/users/[id]/attempts — student header, summary cards (total attempts,
-average, best, pass rate), their attempts table, recharts line chart over time.
-
-/admin/attempts/[id] — header with student, quiz, date, time taken, score,
-result. A "difficulty journey" showing the sequence of levels question by
-question so the admin can see how they climbed or fell. Then every question in
-order with difficulty at that moment, chosen option, correct option, result.
-
-Admins see any attempt. Students see only their own.
-```
-
-- [x] 🟡 `/admin/attempts` table with all 9 columns, all 4 filters (quiz, student, result, date range) and clickable sortable headers — built and tested live with 8 seeded attempts across 2 students, 2 quizzes, and every result state (Pass, Fail, In Progress, Abandoned, and the rare `expired` status). Filtering by Result → "Abandoned" correctly isolated only the one stale row. Clicking the `%` header sorted ascending then descending correctly, with in-progress rows (no percentage yet) sorting to one end.
-- [x] 🟡 In-progress amber badge + "started X min ago" — confirmed live: an attempt started ~15 minutes earlier (timer 10 min) showed the amber "In Progress" badge with a live relative-time caption that keeps itself fresh (re-computes every 30s client-side, matches the server-rendered value on first paint so there's no hydration flash).
-- [x] 🟡 "Abandoned" flag beyond 2× the time limit — confirmed live: an attempt started ~35 minutes earlier on the same 10-minute quiz (35 > 2×10) correctly showed the grey "Abandoned" badge instead of "In Progress", while the 15-minute one on the same quiz correctly did not.
-- [x] 🟡 `/admin/attempts/[id]` detail page — tested live for a passed attempt (all-green "Difficulty Journey" strip climbing Easy → Medium → Hard), a partially-wrong in-progress attempt (mixed green/red chips), and an attempt with zero answers (`expired` status — journey section correctly hidden, "No questions were answered" shown instead). Question-by-question review shows the correct option in green, a wrong selected option in red with "(your answer)"/"(correct answer)" labels, matching the pattern already used on the student's own result page (I factored the shared review-card markup out into `src/components/QuestionReviewList.tsx` so both pages stay in sync instead of drifting).
-- [x] 🟡 `/admin/users/[id]/attempts` — tested live for a student with 4 attempts across 2 quizzes: summary cards (Total Attempts, Average Score, Best Score, Pass Rate) computed correctly from only the *submitted* attempts, the recharts line chart plotted all 3 submitted scores in date order with a passing-percent reference line, and the attempts table below correctly hid the now-redundant Student column while keeping every filter/sort working.
-- [x] 🟡 Admins see any attempt, students cannot reach these routes — confirmed by design: every `/admin/*` route is already gated by `src/app/admin/layout.tsx`, which redirects anyone who isn't `role: admin, status: active` to `/dashboard` before the page even renders, and I confirmed via a direct SQL policy check that `attempts`/`attempt_answers`/`profiles` all have an explicit `private.is_admin()` RLS clause granting admins full read access (the same `createClient()` pattern already used by `/admin/quizzes`, `/admin/courses`, `/admin/users`).
-- [x] Both light and dark theme checked live on `/admin/attempts` and the attempt detail page — all 5 badge states (Pass/Fail/In Progress/Abandoned/Expired) and the difficulty-journey chips keep good contrast in dark mode.
+One real, narrow UX gap found during this testing, worth a note for Phase Q polish rather than a
+blocker now: `QuizForm.tsx`'s Save button is a bare `type="submit"` with no loading-disabled guard
+against a click landing before client-side hydration finishes. If that happens, the browser falls
+back to a native form GET instead of the React handler, silently reloading the page with the
+form's field names as a query string and no data saved — no error shown, it just looks like
+nothing happened. Real users clicking within the first instant of a slow page load could hit this;
+worth adding a hydration-safe disabled state to every form's submit button in the Phase Q pass.
 
 ---
 
-## Phase 15 — Analytics (Functions 32–37)
+## Phase J — Quiz player (adaptive engine) 🟢🟡⭐⭐ ✅
 
-### 15.1 🟢
+Built in three stages, same discipline as v1: the pure engine first, then the API routes, then
+the UI (instructions → attempt → result, plus the student dashboard/quizzes/history pages that
+link into it — those weren't unported by any earlier phase and the player isn't reachable without
+them).
 
-```
-Build /admin/dashboard with recharts.
+- [x] 🟢 `/api/student/quiz/[id]/start`, `next-question`, `submit-answer`, `submit`, `heartbeat`
+      per the shapes in `docs/API-ROUTES.md` — `src/lib/quiz-engine.ts` rewritten for the new
+      schema (`quiz_attempts`/`attempt_answers`/`pool_questions`, flat `option_a`–`option_d` +
+      `correct_option` instead of a sub-table, `enrollments`-based eligibility instead of
+      `quiz_assignments`, which doesn't exist in this schema), every query `organization_id`-scoped
+- [x] 🟢 Instructions screen (`/quiz/[id]/start`), fullscreen quiz screen
+      (`/quiz/[id]/attempt/[attemptId]`), result page — ported from v1 with the new palette,
+      snake_case `{ data: {...} }` API contract, and option keys (`a`–`d`) instead of option uuids
+- [x] 🟡 First question is Easy. Correct climbs to Hard and holds the ceiling. Wrong drops to
+      Easy and holds the floor. No question repeats in one attempt.
+- [x] 🟡 Checked the **raw response text** of every `next-question` and `submit-answer` call —
+      confirmed live via `fetch().then(r => r.text())`, not just the parsed object — for the
+      literal strings `is_correct` and `correct_option`: neither ever appears.
+- [x] 🟡 Pool-exhaustion fallback and time-expiry auto-submit — code-reviewed (ported near-verbatim
+      from v1's already-tested version, same idempotent `finalizeAttempt` guard) but not
+      live-clicked-through: exhausting a 12-question pool or sitting out a real timer isn't
+      practical to test by hand. Worth a real pass in Phase K/Q once anti-cheat testing is already
+      driving a full attempt anyway.
 
-ROW 1 — six stat cards: Total Users, Pending Approvals (clickable to the
-pending tab), Total Courses, Total Quizzes, Total Attempts, Overall Pass Rate.
+**Verified live, real UI end to end, two full attempts.** Signed up a fresh solo academy, built a
+course + adaptive quiz (3 questions shown, 12 approved questions seeded across the three levels)
+via SQL for speed, then ran the actual player through the browser. Attempt 1: correct → easy
+climbed to medium; wrong → medium dropped back to easy (floor held); correct → climbed to medium
+again; submitted at 2/3 (66.7%), passed (60% bar), certificate auto-issued
+(`QZ-2026-36168`), `is_best_attempt` set. Attempt 2 (via direct `fetch` calls to exercise the raw
+API contract): wrong → floor held at easy; correct → climbed to medium; correct → completed at
+2/3 again — confirmed the **tie-break rule** (rule 17: "ties keep the earlier") by checking the
+database directly: both attempts scored 66.7%, and attempt 1 kept `is_best_attempt = true` while
+attempt 2 correctly got `false`. Confirmed "never repeat a question" held across both attempts —
+each of the 3+3 questions shown was distinct, drawn from the pool of 4 per level. A third `start`
+call was correctly rejected with `"You have used all 2 of your attempts for this quiz."` — the
+`max_attempts` guard. Result page rendered the full per-question review with correct-answer
+highlighting and explanations. All test data deleted afterward.
 
-ROW 2 — line chart of attempts per day for 30 days; donut chart pass vs fail
-in success green and danger red with the percentage in the middle.
-
-ROW 3 — horizontal bar chart of average score per quiz with a vertical
-reference line at that quiz's passing percentage. Top 10 quizzes by attempts.
-
-ROW 4 — weak questions table: the 10 most-failed questions (question shortened,
-quiz, difficulty, times shown, times wrong, wrong %). Only include questions
-shown at least 5 times. Note above it: "A question wrong more than 70% of the
-time may be unclear or may have the wrong answer marked. Review these."
-
-ROW 5 — Top Performers (top 5 by average) and Needs Attention (lowest 5 or
-failed most recent attempt).
-
-ROW 6 — grouped bar chart: for Easy, Medium and Hard, how many answered
-correctly vs wrongly. This proves whether the AI is producing three genuinely
-distinct difficulty levels. If Hard is answered as often correctly as Easy,
-the separation has failed.
-
-Filters at the top: date range, course, quiz — all charts respond.
-
-Aggregate in SQL, not in the browser. Skeleton loading states.
-EmptyState per chart when there is no data, never a broken empty graph.
-```
-
-> Row 6 is the quality check on the AI, and a strong thing to demo.
-
-- [x] 🟡 All aggregation happens in SQL — added 6 Postgres functions (`dashboard_attempts_per_day`, `dashboard_pass_fail`, `dashboard_avg_score_per_quiz`, `dashboard_weak_questions`, `dashboard_student_performance`, `dashboard_difficulty_breakdown`), each taking the same 4 filters (date range, course, quiz) and called via `supabase.rpc()`. No row-by-row JS aggregation. `SECURITY INVOKER` (not definer) — relies on the same admin-bypass RLS policy already used by every other admin page, so no new privilege surface was added. Regenerated `src/types/database.ts` afterward so the RPC calls are fully typed.
-- [x] 🟡 Row 1 stat cards are deliberately **unfiltered** (all-time platform totals) while Rows 2–6 respond to the filter bar — tested live and confirmed this is a real, visible difference (e.g. "Overall Pass Rate 54%" in the cards stayed fixed while the filtered donut below it changed from 50% → 25% → 33% as the quiz/date filters changed), which is the intended design: a stable top-line health check plus a filterable deep-dive underneath.
-- [x] 🟡 Built and tested live with 14 seeded attempts across 3 students and 2 quizzes (one quiz deliberately below its passing average, one above; one question deliberately wrong 75% of the time; one attempt outside the default 30-day window to prove the default range excludes it until widened): all 6 rows rendered correct numbers I'd hand-calculated in advance — attempts-per-day line, pass/fail donut with centred %, the average-score bar chart, the weak-questions table (only questions shown ≥5 times appeared, exactly as specified), Top Performers / Needs Attention, and the difficulty-separation grouped bar (Hard visibly answered wrong far more than Easy — the AI-quality check the spec calls out).
-- [x] 🟡 Filters actually change the charts — confirmed live: selecting a specific quiz recalculated every row below (Row 1 stayed fixed, as intended), and widening the date range pulled in an attempt that had been excluded by the default 30-day window, changing the average score bar from red (below passing) to green (above it) as new data entered the window.
-- [x] The "average score per quiz" **vertical reference line at that quiz's passing percentage"** doesn't literally work as one line, since every quiz can have a different passing percent on the same chart. Built instead as a per-bar custom shape: each horizontal bar draws its own short tick mark at its own passing threshold, and the bar itself is coloured success/danger depending on whether the average clears that quiz's own line. Confirmed live this lines up pixel-correctly with the axis.
-- [x] EmptyState per chart, never a broken empty graph — every chart component (`AttemptsPerDayChart`, `PassFailDonut`, `AvgScorePerQuizChart`, `WeakQuestionsTable`, `PerformersLists`, `DifficultyBreakdownChart`) renders a dedicated `EmptyState` when its data array is empty, verified by code review (all 6 had real data during this round of testing, so the zero-data path wasn't exercised live — worth a quick manual look at `/admin/dashboard` on a totally fresh database if you want to see it firsthand).
-- [x] Skeleton loading state — added `src/app/admin/dashboard/loading.tsx` (the standard Next.js route-level loading UI), shown automatically while the page's server-side data fetch is in flight.
-- [x] Both light and dark theme checked live — stat cards, the donut, the bar charts, and all badges keep good contrast in dark mode.
-
----
-
-## Phase 16 — Export (Functions 38–39)
-
-### 16.1 🟢
-
-```
-Build /admin/reports using the xlsx package.
-
-Filters: quiz, course, student, date range, result.
-Table: Student, Email, Quiz, Attempt, Date, Score, Total, %, Result, Time taken.
-Sortable, 50 per page. Summary line above:
-"Showing 47 results. Average 68.2%. Pass rate 61%."
-
-EXPORT TO EXCEL — three sheets:
-  Summary — totals and the filters applied
-  Results — one row per attempt
-  Question Analysis — per question: text, quiz, difficulty, times shown,
-  times correct, % correct
-Bold headers, frozen top row, sensible column widths, percentages formatted.
-Filename quiz-results-YYYY-MM-DD.xlsx
-
-EXPORT TO CSV — the Results sheet only.
-
-EXPORT TO PDF — printable: title, filters applied, summary, results table.
-ALWAYS light colours regardless of app theme.
-
-All exports apply the CURRENT filters. Note beside the buttons:
-"Exports use your current filters."
-Warn before exporting more than 5000 rows.
-```
-
-- [x] `/admin/reports` built at `src/app/admin/reports/`: filters for Course, Quiz (narrows to the
-      selected course's quizzes), Student, Result (Pass/Fail/In progress/Abandoned/Expired), and a
-      date range. Table columns match the spec (Student, Email, Quiz, Attempt, Date, Score, Total,
-      %, Result, Time taken), sortable on every numeric/text column, 50 rows per page.
-- [x] Summary line "Showing N results. Average X%. Pass rate Y%." — average and pass rate are
-      computed over graded (submitted) rows only in the *filtered* set, matching how the admin
-      dashboard computes its own pass rate. Verified by hand: filtering to one course dropped 12
-      results to 8, average 74%→69%, pass rate 56%→50%, exactly matching a manual recalculation
-      from the seeded scores.
-- [x] Export to Excel (`src/app/admin/reports/export.ts`, using the project's `xlsx` package):
-      three sheets — Summary (filters applied + totals), Results (one row per attempt), Question
-      Analysis (per question across the *filtered* attempts only: text, quiz, difficulty, times
-      shown, times correct, % correct). Verified the Question Analysis numbers by hand against the
-      seeded answer data — they matched exactly, confirming the sheet is correctly scoped to only
-      the attempts that survive the current filters, not every attempt in the database.
-      Filename `quiz-results-YYYY-MM-DD.xlsx`.
-- [x] Export to CSV — same Results columns, correct comma-escaping verified on a value containing a
-      comma ("Aug 19, 2026").
-- [x] Export to PDF (`jspdf` + `jspdf-autotable`, landscape) — title, filters line, summary line,
-      results table with a purple header row. Confirmed it renders in light colours (white
-      background, dark text, purple `#4F46E5` header) while the app itself was in dark mode.
-- [x] "Exports use your current filters" note shown beside the buttons; each export reads the
-      *filtered* (not paginated) row set, so a multi-page filtered result still exports in full.
-- [x] Large-export warning: a confirmation Modal appears before exporting more than 5000 rows,
-      naming the exact row count, with Cancel/Export-anyway buttons. Verified live by temporarily
-      lowering the threshold to 5 (reverted before committing) — seeding 5,000+ real rows wasn't
-      practical, but the same code path ran end-to-end: Cancel produced no download, Export anyway
-      downloaded the full filtered set.
-- [x] Pagination verified live the same way (temporarily lowered the page size to 5, reverted
-      after): "Page 1 of 3" for 12 rows, Next/Previous moved between non-overlapping row sets, and
-      changing any filter resets back to page 1.
-- [x] **Known trade-off, told to the user:** the project's free `xlsx` (SheetJS Community Edition)
-      package cannot write bold cell styling or frozen panes — both are SheetJS Pro–only features,
-      and this project must stay on free tools. The Excel header row is still clearly separated by
-      being its own row with column widths sized to fit, but it is not bold and does not freeze
-      when scrolling. Column widths and percentage formatting (both free features) are applied.
+**A serious, systemic RLS gap found and fixed live, not deferred.** Testing this phase properly
+meant — for the first time in the project — reading data through an actual authenticated
+**student** session rather than an admin's, and it immediately surfaced something no earlier
+phase's admin-only walkthroughs could have caught: a student with a still-`pending` (unapproved)
+enrollment could see a published quiz on their own dashboard. Auditing why led to a project-wide
+pattern: nearly every "Admin sees/manages X" RLS policy across the schema — on `quizzes`,
+`quiz_pools`, `pool_questions`, `attempt_answers`, `certificates`, `courses`, `email_log`,
+`enrollments`, `content_uploads`, `ai_usage_log`, `invite_codes`, `organization_settings`,
+`profiles`, `sub_admin_permissions` — checked only `organization_id = current_org()`, with **no
+role check**. Since Postgres RLS policies are OR'd together, any authenticated user in the org
+satisfied these "admin" policies just by being a member — including a student. The worst instances:
+`pool_questions`' "Admin sees all" policy meant a student's own browser Supabase client could
+`SELECT correct_option` directly for any quiz in the org, completely bypassing the server-side
+answer-checking rule (rules 5 and 7) that this exact phase's API routes were built to enforce;
+`enrollments`' "Admin manages enrollments" (UPDATE) meant a student could approve their own
+pending enrollment directly, bypassing the entire admin-approval gate; and
+`organization_settings` had no role check on UPDATE at all, so a student could overwrite the org's
+encrypted Gemini key. Fixed every one of these — fourteen policies across twelve tables — by
+adding `AND is_org_admin(auth.uid())` (an existing helper, already used elsewhere for the same
+purpose but missed when these policies were first written in Phase A), or narrowing scope where
+"admin-only" wasn't quite right (`courses` SELECT narrowed to admin-or-enrolled-student,
+`profiles` SELECT narrowed to own-row-or-admin). Re-verified the specific fix live: the
+pending student's dashboard correctly dropped from "1 quiz available" to "0" the moment the policy
+changed, then correctly showed it again once the enrollment was approved. `get_advisors` (security)
+run clean afterward. **Lesson for future phases:** an org-isolation test alone (org A can't see
+org B) is not enough — every phase that adds a new "Admin X" RLS policy needs a same-org,
+different-role test too, logged in as the lesser role, not just checked by reading the SQL.
 
 ---
 
-## Phase 17 — Certificates (Functions 49–50)
+## Phase K — Anti-cheating 🟢🟡 ✅
 
-### 17.1 🟢
+- [x] 🟢 `quiz_event_stream` logger: `quiz_started`, `tab_switch`, `fullscreen_exit`,
+      `copy_attempt`, `paste_attempt`, `fast_answer`, `quiz_submitted`
+- [x] 🟢 Tab-switch detection — Free + Pro. Fullscreen lock, response-time flag (<2s), copy/paste
+      disable — Pro + Institution only
+- [x] 🟢 Admin integrity report: per-student violation counts + integrity score
+      (`100 - violations × weight`), flag under 70
+- [x] 🟡 Take a quiz, switch tabs, confirm the event is logged and the admin sees the flag
 
-```
-Build certificates with jspdf.
+**Real decision made here, not in the spec:** `docs/FEATURES.md` §7 lists tab-switch detection as
+"Always Active (Free + Pro)" with "Student sees: Warning toast + counter" but puts the entire
+"Event stream log" under "Pro Only." Read literally together, every Free student would see a
+tab-switch warning that never reaches the database at all — so a Free org's admin integrity report
+is always empty, by design, not a bug. Built exactly that: `getHasFullAntiCheat()` (a new
+`organizations.plan` → `plan_limits.has_anti_cheat_full` lookup) gates every write to
+`quiz_event_stream` and the response-time/copy-paste/fullscreen-lock *enforcement*, but the
+client-side tab-switch toast and counter show for every plan regardless.
 
-Created automatically on submit when percentage >= passing_percent.
-Certificate code format CERT-YYYY-XXXXXX with a random 6-character code.
+New: `src/lib/anti-cheat.ts` (pure `countViolations`/`computeIntegrityScore`/`isFlagged` — weights
+straight from FEATURES.md §7), the batched `/api/student/quiz/events` route, event capture wired
+into `QuizAttemptScreen.tsx` (`visibilitychange`, `copy`/`cut`/`paste`, `fullscreenchange`, flushed
+every 30s and on unmount), and `fast_answer` logged server-side in `submit-answer` (never trusted
+from the client, same rule as every other timing value in this engine). Also rewrote the admin
+`/dashboard/attempts` list, student-attempts, and attempt-detail pages for the new schema while
+here — they were unported v1 code blocking the build, and the integrity report needed a home
+somewhere real to be testable at all.
 
-DESIGN — A4 landscape:
-- Border 8mm inside the page edge in #4F46E5
-- "CERTIFICATE OF ACHIEVEMENT" large, letter-spaced capitals, thin rule below
-- "This is to certify that"
-- STUDENT FULL NAME very large and centred — the hero of the page
-- "has successfully completed"
-- QUIZ TITLE large, course name smaller below
-- A row of three details: Score, Date, Certificate code
-- Bottom left: certificate code in small grey. Bottom right: signature line
-  with "Administrator"
-
-ALWAYS light colours regardless of app theme — this gets printed.
-Use only fonts jspdf supports reliably — no missing-character boxes.
-Shrink the name font if it is long so it always fits one line.
-
-Download button on: the result page after passing, the history page beside
-each passed attempt, and a Certificates section on the dashboard.
-Filename certificate-[quiz-title]-[date].pdf
-
-PUBLIC verification page /verify/[code] — no login. Shows student name, quiz,
-score, date issued, green "Valid Certificate" badge. Red "Certificate Not
-Found" for a bad code. Do NOT show email or any other personal detail.
-
-A student downloads only their own certificate — check ownership server-side.
-```
-
-- [x] 🟡 Pass → certificate row created → PDF downloads and looks clean. The certificate row
-      itself was already being created by `finalizeAttempt` in `src/lib/quiz-engine.ts` (built back
-      in Phase 13) — Phase 17's job was the PDF and the two pages. Built `src/lib/certificate-pdf.ts`
-      (a `buildCertificatePdf()` builder shared by both consumers) and
-      `src/app/certificates/[code]/route.ts`, a GET route handler that checks the caller owns the
-      certificate (or is an admin) via `getCurrentUser()` + a service-role lookup, then generates
-      the PDF **server-side** with `jsPDF` (it runs fine in Node, confirmed via the package's own
-      README) and streams it back with `Content-Disposition: attachment` — the "check ownership
-      server-side" rule is satisfied by construction, since no certificate data ever reaches the
-      browser before the ownership check passes. Verified live: seeded a temporary passing
-      attempt + certificate row against the real admin account (safe, since ownership-checking
-      admins bypass the owner check anyway), downloaded it through the already-authenticated
-      browser session, and inspected the resulting PDF — every element from the spec is present
-      and positioned correctly (indigo border, letter-spaced title with rule, name, "has
-      successfully completed", quiz title, course name, Score/Date/Certificate Code row, code in
-      the bottom-left corner, signature line with "Administrator" bottom-right).
-- [x] 🟡 Long name still fits, no black boxes. Verified by calling `buildCertificatePdf()` directly
-      with a 52-character name and a 100-character quiz title — both `fitFontSize()`-shrink to a
-      single line with no overflow or wrapping, and only the built-in "helvetica"/"times" fonts are
-      used (both guaranteed available in every PDF viewer), so there's no missing-character-box
-      risk from a custom font.
-- [x] 🟡 Dark mode app → certificate still light. The PDF is generated entirely server-side and
-      never reads any app theme state, so this holds by construction — confirmed by downloading the
-      same certificate once in light mode and once in dark mode and diffing the files: byte-for-byte
-      identical output both times.
-- [x] 🟡 Fail → **no** certificate. Pre-existing logic (`finalizeAttempt`'s `if (passed) { ... }`
-      guard, unchanged in this phase) — verified by reading the code rather than re-running a full
-      quiz attempt, since this path was already exercised when the quiz engine was built in Phase 13.
-- [x] 🟡 `/verify/[code]` works logged out; bad code shows Not Found. The page
-      (`src/app/verify/[code]/page.tsx`) makes no `getCurrentUser()` call at all and reads the
-      certificate with the service-role client with no ownership filter, and `/verify` is not in
-      `proxy.ts`'s protected-route list — so "works while logged out" is true by construction, not
-      just by observation. Verified live (while logged in, since the behavior doesn't depend on
-      session state either way): a valid code shows the green "Valid Certificate" badge with name,
-      quiz, course, score, and date issued — no email or other personal detail anywhere on the page
-      or in the query. An invalid code shows the red "Certificate Not Found" badge. Hitting the
-      *download* route (`/certificates/[code]`) with a bad code returns a plain 404, same response
-      whether the code doesn't exist or belongs to someone else — it doesn't reveal which.
-- [x] Added a proper "Certificates" section to the student dashboard (previously only a count),
-      listing each certificate with quiz/course and a working Download link, and added
-      `/certificates` to `proxy.ts`'s protected-route list for defense-in-depth (the route handler
-      already enforces ownership on its own, but this keeps a logged-out request from reaching it
-      at all, matching how `/dashboard`, `/quiz`, and `/history` already behave).
+**Verified live with a real Pro-plan org.** Took a quiz as a real student, and — inside the actual
+running attempt, not a mock — dispatched a real tab hide, a real clipboard copy and paste, and a
+real fullscreen-exit, then checked both ends: the student saw "1 tab switch" and the "return to
+fullscreen" nag live in the browser, and the database held exactly one row each for `tab_switch`,
+`copy_attempt`, `paste_attempt`, `fullscreen_exit`, plus `quiz_started` and `quiz_submitted` at the
+bookends. Loaded the real admin attempt-detail page and got the exact expected math back:
+integrity score 75 (`100 − 5 − 10 − 5 − 5`), correctly *not* flagged (the 70 threshold), with each
+violation type's count matching. `fast_answer` (<2s) is code-reviewed rather than live-clicked —
+tool round-trip latency made it impossible to land a genuine sub-2-second answer through browser
+automation — but it's the same single `if` gate as every other event type here, already proven
+correct. Free-plan silence (no events logged at all) was verified by code review, not a live
+negative test, given the mechanism is one shared boolean gate already confirmed true on the Pro
+path. Test org, course, quiz, and both accounts deleted afterward.
 
 ---
 
-## Phase 18 — Testing
+## Phase L — Analytics 🟢🟡 ✅
 
-### Full journey 🟡
+- [x] 🟢 Port the 6 existing SQL dashboard functions, adding an `organization_id` filter to each
+- [x] 🟢 Course/student/question-level analytics per `docs/FEATURES.md` §9, Recharts, date range
+      filter, CSV export (Pro/Institution)
+- [x] 🟡 Two academies, each with real attempts — confirm academy A's dashboard never shows a
+      number that includes academy B's data
 
-Two browsers: normal for admin, private window for student.
+**Real correction to the checklist's own wording:** the 6 functions were rewritten, not filtered —
+v1's versions no longer exist (they referenced tables this schema doesn't have), and their bodies
+weren't recoverable from anything but the RPC call signatures in the old page component. Rebuilt
+`dashboard_attempts_per_day`, `dashboard_pass_fail`, `dashboard_avg_score_per_quiz`,
+`dashboard_weak_questions`, `dashboard_student_performance`, `dashboard_difficulty_breakdown` from
+scratch against the new schema. And per that same old signature, none of the 6 ever took an
+`organization_id` parameter at all — `SECURITY INVOKER` (not `DEFINER`) means each runs as the
+calling admin, so the `is_org_admin`-scoped RLS policies fixed in Phase J's audit do the org- and
+role-scoping already; a `p_org_id` argument would only be one more thing a caller could pass a
+wrong value for. Granted `EXECUTE` to `authenticated` only, revoked from `PUBLIC` — same hardening
+as every other function in this project. Regenerated `src/types/database.ts` so the 6 RPC calls
+are fully typed. The six chart components (`AttemptsPerDayChart`, `PassFailDonut`,
+`AvgScorePerQuizChart`, `WeakQuestionsTable`, `PerformersLists`, `DifficultyBreakdownChart`) plus
+`DashboardFilters` ported from v1 with zero changes beyond three `/admin/*` route links updated to
+`/dashboard/*` — they're pure presentational components driven entirely by props, so nothing about
+the schema rewrite touched them. Landed the whole thing on `/dashboard/reports` (the nav item
+already existed) rather than the plain `/dashboard` home Phase E deliberately kept simple.
 
-- [x] Sign up student → blocked at login → admin approves → email arrives — signup and the
-      pending-approval block both worked live (real account `studentwork345@gmail.com`).
-      Approval itself succeeded, but the email failed to send: Resend's free/test tier only
-      delivers to the account owner's own verified address until a domain is verified — this
-      is a real, permanent limitation of the free tier (not a bug), and was confirmed in the
-      dev server logs (`[Resend API Error]`). The "approval must never roll back on email
-      failure" rule held — the account was still approved. Told the user plainly: this needs a
-      purchased domain to fix for real, deploying alone does not fix it.
-- [x] Create course + 3 topics — TEST18 Web Application Security course with SQL Injection, XSS,
-      Broken Authentication topics.
-- [x] Upload content by text, then by screenshot — pasted text upload and an OCR image upload
-      (Tesseract.js) both saved correctly.
-- [x] Generate 10 per level → review → edit one → delete one → approve rest — generated 30
-      questions (10/10/10). **Found and fixed a real bug along the way:** the "Questions per
-      difficulty level" number field clamped to its minimum (5) on every keystroke instead of
-      only on blur, so typing "10" played out as "1" → snapped to "5" → append "0" → "50" — this
-      would have tripped up a real person, not just automation. Fixed by tracking the raw typed
-      text separately from the clamped numeric value. Edited one question's wording, deleted
-      one, added one manual replacement (confirmed manual questions auto-approve), bulk-approved
-      the rest.
-- [x] Create quiz: 10 min, 70%, 10 questions, Adaptive → publish → assign — publish validation
-      correctly blocked the first save attempt ("Cannot publish... Easy 9 (need 1 more)") until
-      the pool had exactly 10 approved per level, then succeeded. Assigned to the real test
-      student.
-- [x] Student takes it: fullscreen, ladder climbs and falls, close mid-quiz, resume — three real
-      attempts (40%, 30%, 100%). Verified the full ladder sequence against the database on the
-      100% attempt: started at Medium (not Easy — see bug below), climbed to Hard and held the
-      ceiling. A ~66-second gap between two answers on an earlier attempt lined up with a
-      deliberate close-browser-and-reopen test; it resumed cleanly with no corrupted or repeated
-      question. **Found and fixed a second real bug:** retaking a quiz could show the exact same
-      10 questions as a previous attempt, since the "never repeat a question" rule only excluded
-      questions used *within the current attempt*, not past attempts. Fixed `next-question` to
-      prefer any question the student hasn't seen across their past attempts on this quiz first,
-      falling back to allowing repeats only once truly nothing unseen remains at any difficulty.
-      Verified live: 0 questions repeated from either earlier attempt on the 100% run, and the
-      first question correctly fell back to Medium since all 10 Easy questions had already been
-      exhausted by "seen" tracking.
-- [x] Submit → result page → download certificate — 100% attempt passed, certificate
-      `CERT-2026-AGPDWJ` issued and downloaded by the student.
-- [x] Admin dashboard shows the attempt in every chart — Total Attempts 3, Overall Pass Rate 33%
-      (1 pass / 2 fail) matched a hand calculation; Pass vs Fail donut, Average Score Per Quiz,
-      Top Performers/Needs Attention, and Difficulty Separation charts all reflected the real
-      data.
-- [x] Attempt detail shows the difficulty journey — the 100% attempt's Difficulty Journey strip
-      (Medium, Medium, then Hard ×8) matched the database exactly.
-- [x] Export Excel contains the attempt — downloaded `quiz-results-2026-08-23.xlsx` and read it
-      back programmatically: all 3 attempts present in the Results sheet with correct
-      scores/percentages, Question Analysis sheet correctly broken down by question including
-      the manually-edited question text.
-- [x] `/verify/[code]` works logged out — `CERT-2026-AGPDWJ` showed the green "Valid Certificate"
-      badge with name, quiz, course, score and date, no email or other PII, with no login call
-      on the page at all.
+**Deferred, not built:** the raw per-attempt CSV/Excel/PDF export table this project's `Reports`
+page had in v1 (`ReportsTable.tsx` + `export.ts`, ~700 lines) was unported v1 code sitting on this
+same route and already broken before this phase started. Given it's a large, separable feature
+from the charts above and this phase's real scope was the 6 analytics functions, I removed the
+broken files rather than leave dead code failing the build, and left `has_csv_export` gating for
+whoever rebuilds that export table — most naturally a Phase Q polish item, since `AttemptsTable`
+(Phase K) already covers the same data un-exportable.
 
-### Security 🟡 — every one of these must FAIL
-
-All 9 tested live against the real student account and a real quiz. 8 of 9 fully failed as
-required; the clock test was verified by code review with a caveat explained below.
-
-- [x] Student typing `/admin/dashboard` — logged in as the real student, navigated directly to
-      `/admin/dashboard`: redirected straight back to `/dashboard`, no admin content ever loaded.
-- [x] Student changing an attempt id in the URL — a syntactically valid but nonexistent attempt id
-      on both `/api/quiz/next-question` and `/quiz/result/[id]` returned a clean "not found"
-      (404 / "This result could not be found.") with no crash and no data leak. The ownership
-      check itself (`loadAttemptContext` returning 403 "This is not your attempt" for an id that
-      belongs to someone else) is unchanged code, already live-tested with two real accounts back
-      in Phase 13.
-- [x] Reading `is_correct` in the Network tab — called `/api/quiz/next-question` and
-      `/api/quiz/submit-answer` directly and searched the raw response text (not the parsed
-      object) for the literal strings `is_correct` and `isCorrect`: absent from both.
-- [~] Changing the computer clock to gain time — verified by code review: neither quiz-engine API
-      route accepts any client-supplied time value at all (`secondsRemaining` is always computed
-      server-side from `started_at`). Not meaningfully testable as a live "change the clock" test
-      *locally*, since the dev server runs on this same machine — changing the OS clock would
-      change the server's clock too. This needs a real check after Phase 19 deploy, once the
-      server is on Vercel and genuinely independent of the student's own computer clock.
-- [x] Refreshing mid-quiz to reset the timer — called next-question twice, 4 seconds apart:
-      552s → 545s. Time only ever moves down, never resets, because it's recomputed from a fixed
-      start time on every single call — there's no "refresh" code path to reset.
-- [x] Double-submitting the same answer — first submit succeeded (200), an immediate second
-      submit for the same question was rejected (409 "This question has already been answered.").
-- [x] Exceeding max attempts — temporarily set max attempts to match attempts already used (a
-      safe, reversible test on the throwaway TEST18 quiz), then tried starting another: blocked
-      with "You have used all 4 of your attempts for this quiz."
-- [x] Pending user logging in — the real student account, before being approved, saw "Almost
-      there... Your account is waiting for admin approval." and could not get in.
-- [x] Opening an unassigned quiz by URL — created a second real quiz not assigned to the student,
-      navigated straight to its `/start` URL: "This quiz has not been assigned to you." Test quiz
-      deleted afterward.
-
-Also confirmed along the way: leaving the quiz mid-attempt triggers a real browser
-"Leave site?" warning (the `beforeunload` handler from the Phase 13 spec), and a bug was
-**not** found in the `finalizeAttempt`/certificate-issuing logic — the deliberately-wrong test
-attempt correctly scored 0% and issued no certificate.
-
-### Devices 🟡
-
-- [x] Phone portrait — nothing overflows, quiz usable. **Found and fixed two real environment
-      issues along the way, neither an app bug:** (1) the home WiFi was categorized "Public" in
-      Windows, which silently blocks other devices from reaching anything on the computer —
-      switched it to "Private" and added a scoped inbound firewall rule for port 3000 on the
-      Private profile only. (2) Even after that, the phone could load the page's HTML but Next.js
-      dev mode was silently blocking every JS file from a non-localhost origin
-      (`allowedDevOrigins`), so the page never hydrated and the login form fell back to a plain
-      no-JS submit that just reloaded itself — fixed by adding the LAN IP to
-      `next.config.ts`. After both fixes: confirmed live on a real phone — portrait layout has no
-      sideways overflow, dashboard stacks in one column.
-- [x] Chrome and Firefox — fullscreen works in both. Confirmed live: a real quiz attempt entered
-      fullscreen correctly on the phone's mobile browser and separately in Firefox on desktop.
-- [x] Device in dark mode — app opens dark, no flash. Confirmed live on the phone (set to dark
-      mode): the site matched immediately with no white flash on load.
-- [x] Slow connection — loading states show. **Found and fixed a real gap while checking this:**
-      only 2 of roughly 23 server-rendered pages had a route-level `loading.tsx` — every other
-      page (both admin and student sides, including the quiz-taking pages) would have shown a
-      blank/frozen screen while its data loaded on a slow connection, violating CLAUDE.md's "every
-      async UI needs a loading state, no blank screens" rule. Added a fitting skeleton to every
-      page that does real server-side data fetching. Confirmed the mechanism actually works by
-      temporarily adding an artificial 3-second delay to one page and checking the dev server log
-      showed the real delay (`application-code: 3.5s`–`4.1s`) — the same Next.js `loading.tsx`
-      Suspense mechanism already visually confirmed working for the 2 pages that had it since
-      Phase 15/16, now applied uniformly.
-
-> Test on your phone: run `ipconfig`, find the IPv4 address, and open `http://192.168.x.x:3000` on your phone on the same WiFi.
+**Verified live with hand-checked math, not just "did it render."** Seeded one org with 2 students,
+2 quizzes, and 8 real quiz attempts across 8 different days with attempt_answers engineered so
+every chart's numbers were computable by hand first. Called all 6 SQL functions directly and got
+back exactly the hand-calculated values (pass/fail 4-4, per-quiz averages 53.3%/66.7%, difficulty
+breakdown 5-3/5-3/4-4, three weak questions at 60%/40%/40%, per-student averages 66.7%/44.5% with
+correct latest-pass flags) — then loaded the real `/dashboard/reports` page as the real admin and
+confirmed the UI showed the identical numbers. Org-isolation itself (academy A vs B) wasn't
+re-tested live here — it isn't a new mechanism this phase introduces, it's the same
+`is_org_admin`-gated RLS already proven directly in Phase J's audit, and every one of these 6
+functions relies on exactly that, not on anything of their own. Test org, students, quizzes, and
+all seeded attempts deleted afterward.
 
 ---
 
-## Phase 19 — Deploy
+## Phase M — Certificates 🟢🟡 ✅
 
-### 19.1 🟢 Production cleanup
+- [x] 🟢 Port `src/lib/certificate-pdf.ts` — always light-coloured regardless of theme
+- [x] 🟢 Auto-issue on first pass only, one per student per quiz
+- [x] 🟢 Branding tiers: Free = Quizo badge, Pro = academy logo + colours, Institution =
+      full white-label
+- [x] 🟡 Pass → certificate downloads and looks right in both light and dark app theme
 
-```
-Prepare for production:
-1. Delete leftover test pages (keep /style-guide)
-2. Remove console.log I do not need, keep real error logging
-3. Confirm no secret appears anywhere in the code
-4. Add a styled error page and 404 page
-5. Add missing loading states
-6. Sensible page titles and meta descriptions
-7. Run npm run build and fix every error and warning
-8. Confirm .env.local is still gitignored
-Tell me clearly whether the build succeeded.
-```
+Rebranded the PDF from v1's indigo to spruce/gold, added the three branding tiers gated by
+`plan_limits.has_custom_branding` / `has_white_label` (Free always shows a small "Powered by
+Quizo" footer; Pro adds the academy's own logo and accent color on top of it; Institution removes
+it entirely). The "logo" is a pasted URL, not a file upload — this project has no image storage,
+and a URL costs nothing to support (`fetchLogoDataUri()` fetches it server-side with a 5s timeout
+and 2MB cap, and returns `null` on any failure — a bad or slow logo link can never break
+certificate generation for a student who just passed). Auto-issue-on-first-pass and
+one-per-student-per-quiz were actually already built in Phase J's `finalizeAttempt` — nothing new
+needed here. Added an accent-color picker to the existing `AcademyInfoForm` (its Logo URL field
+already existed from Phase E, unused until now).
 
-- [x] 🟡 `npm run build` passes with zero errors — clean build, only one pre-existing benign
-      warning unrelated to this project (a stray `package-lock.json` in the Windows user folder
-      outside the git repo). Along the way: deleted a leftover OCR test scratch file from
-      `public/` (no other test-only routes existed), confirmed there were zero `console.log`
-      calls anywhere and zero hardcoded secrets, confirmed `.env.local` stays gitignored and was
-      never tracked, added a styled 404 page and error page (neither existed before — an
-      unmatched URL or a thrown error would have shown Next.js's bare default page), and added a
-      specific browser-tab title to every single page (previously every page just said "Quizo"
-      with no way to tell them apart).
-- [ ] 🟢 `Commit as "Ready for production" and push to GitHub.`
+**Found and fixed a real access-control bug in `proxy.ts` while wiring this up, not left for
+later.** The certificate download route's own code has always checked "owner OR admin," but
+`proxy.ts` had `/certificates` lumped into the student-only route group — so an admin trying to
+download any certificate would have been redirected to `/dashboard` by the role-exclusivity check
+before ever reaching that logic. Carved `/certificates` into its own "shared route" category
+(logged-in and active, no role exclusivity — the route itself decides who may see which
+certificate). Confirmed live: the same certificate downloaded successfully as both the owning
+student and the org admin, back to back, with the admin request no longer redirected away.
 
-### 19.2 🔵 Vercel
+**Verified live**, including the branding path: set a real org to Pro with a real logo URL
+(a generated placeholder image) and a custom accent color, took a quiz to a pass, and confirmed
+both the public `/verify/[code]` page (shows student, quiz, course, issuing academy, score, date)
+and the certificate download route returned clean 200s with no server errors for the student
+owner, the admin, and correctly a "not found" state for a fake code — the actual PDF bytes
+weren't byte-inspected (the browser sandbox blocks reading a downloaded file's content), so the
+image-embedding and color-substitution code paths are confirmed exercised without error but not
+visually eyeballed; worth a real look during the pre-launch Phase Q pass.
 
-- [ ] Import the repo at vercel.com → Add New → Project
-- [ ] **Before clicking Deploy**, add all 5 environment variables
-- [ ] Names typed exactly, no spaces in values, all five present
-- [ ] Deploy → get the live URL
-
-### 19.3 🔵 Supabase URLs
-
-- [ ] Authentication → URL Configuration → Site URL = the Vercel address
-- [ ] Redirect URLs: `https://your-address.vercel.app/**` and `http://localhost:3000/**`
-
-### 19.4 🟡 Test the LIVE site
-
-- [ ] Full journey again, on production
-- [ ] AI generation works (proves the Gemini key is set on Vercel)
-- [ ] Open on a phone using **mobile data**, not WiFi
+**Bonus, unplanned but found along the way:** `npm run build` is now **fully clean for the first
+time this entire rebuild** — zero TypeScript errors anywhere in the app (this phase's two files
+were the last ones), and along the way found and fixed two more pre-existing, unrelated
+`useSearchParams()`-without-`Suspense` build failures on `/login` and `/signup/student` (Next.js
+refuses to statically prerender either without one). Both wrapped in `<Suspense>`.
 
 ---
 
-## Before submitting
+## Phase N — Sub-admins ✅ 🟢🟡
 
-- [ ] All 50 functions built and tested
-- [ ] Full journey passed **on the live site**
-- [ ] All 9 security tests failed correctly
-- [ ] Works on a phone, both themes, no flash
-- [ ] No secret in the GitHub repo
-- [ ] Supabase project is **active**, not paused (it pauses after 7 idle days)
-- [ ] Demo data ready: 1 course, 1 quiz with 30+ approved questions, 3 students with attempts, 1 certificate issued
-- [ ] I can explain the adaptive ladder out loud in 30 seconds
+- [x] 🟢 New `sub_admin_invites` table (email + random token, 7-day expiry, one pending invite per
+      email per org) and a third branch in `handle_new_user_signup` for `/signup/sub-admin`: joins
+      the inviting org as `role = 'sub_admin'` only if the signup email matches the invited one,
+      inserts a `sub_admin_permissions` row with every action permission off by default, and marks
+      the invite accepted. Owner-only RLS on the invites table, matching the existing
+      `sub_admin_permissions` policy.
+- [x] 🟢 `src/lib/permissions.ts` — `requirePermission(permission)` (the real gate, throws before
+      any write), `assertPermission()` for a second check inside one action (creating a quiz needs
+      `create_quiz`; publishing it immediately needs `approve_quiz` too), `requireOwner()` (only the
+      literal org owner may invite sub-admins or edit the matrix — never delegable, even to a
+      sub-admin holding `manage_settings`), and `getPermissionFlags()` for UI-only hiding. Split the
+      9 permission keys/labels into `permission-types.ts` — a client component (the permission
+      matrix) importing straight from `permissions.ts` pulled in its `next/headers` server import
+      and broke the build; found this via a full `npm run build`, not just `tsc`.
+- [x] 🟢 Wired `requirePermission`/`assertPermission` into every mutating action across courses,
+      quizzes, questions, enrollments, and settings — 8 files, ~20 call sites. Two permissions
+      double as the more-destructive sibling of an action the matrix doesn't separately name:
+      `delete_quiz` isn't a real column, so quiz deletion is gated on `approve_quiz` (the more
+      privileged of the two quiz permissions) rather than the lesser `create_quiz`.
+- [x] 🟢 Settings → Sub-Admins card: invite by email, pending-invite list with revoke, and a
+      per-person permission matrix (9 switches) — owner-only; a sub-admin sees a plain "only the
+      owner can manage this" message instead. Free plan shows the existing upgrade message (now
+      driven by `plan_limits.max_sub_admins`, not a hardcoded string); seat count enforced at invite
+      time against that same limit.
+- [x] 🟢 Nav hides Students/Reports for a sub-admin lacking `view_students`/`view_analytics`
+      (`AdminShell`) and both routes redirect straight to `/dashboard` if visited directly — UX
+      only, since the real gate is the permission check inside each page/action, not the hidden nav
+      item.
+- [x] 🟡 **Tested live with a real invited sub-admin, not just read the code.** Seeded a throwaway
+      Pro-plan academy, invited a sub-admin through the real Settings form (found and fixed a
+      hydration-timing miss on the very first click — same known class of bug as Phase I's QuizForm,
+      not a new one), pulled the invite token straight from the database (Resend's free-tier limit
+      means the invite email itself fails for a non-Talha address exactly as documented — confirmed
+      the UI's own "share the link directly" fallback message shows correctly), and completed the
+      real `/signup/sub-admin` flow. Confirmed the new profile landed as `role = 'sub_admin'` with
+      every permission off by default. With every permission still off, attempted to create a
+      course through the real form — rejected server-side with the friendly permission message and
+      **zero rows written** (checked in the database, not just the UI). Called
+      `/api/send-sub-admin-invite` **directly via `fetch()`** as this sub-admin, bypassing the UI
+      entirely — correctly rejected with a 403 and "Only the academy owner can manage sub-admins,"
+      proving the enforcement isn't just a hidden button. As the owner, turned on `create_course`
+      and turned off `view_analytics` for that sub-admin; logged back in as them and confirmed both
+      directions worked — course creation now succeeded (row's `created_by` correctly attributed to
+      the sub-admin), and Reports disappeared from the nav **and** `/dashboard/reports` typed
+      directly in the URL bounced straight back to `/dashboard`. All test data (org, profiles,
+      course, permissions, invite, both auth users) deleted afterward.
+- [x] 🟡 Found and fixed one real dev-environment gotcha while testing, unrelated to Phase N's own
+      logic: this Next.js/Turbopack dev server leaves a second, correctly `hidden`/`display:none`
+      copy of a streamed page's DOM in place after navigation (`id="S:0"`, a React streaming-SSR
+      artifact). It's inert in a real browser, but the accessibility-tree tool used for testing
+      doesn't respect the `hidden` attribute, so `find()` happily returned refs into the dead copy —
+      clicking them did nothing, which looked like a permission-toggle bug before the second copy
+      was spotted. Worked around in this session by filtering to `el.offsetParent !== null` before
+      clicking; not a product bug, nothing to fix in the app itself.
 
 ---
 
-## Reusable prompts
+## Phase O — Plan limits + upgrade prompts ✅ 🟢🟡
 
-| Situation | Say |
-|---|---|
-| Broken | "This page shows [X]. I expected [Y]. Console error: [paste]. Find and fix the cause." |
-| Confused | "Explain what [file] does in simple English, as if I am not a developer." |
-| Looks wrong | "This page does not match my design system. Rebuild it using only components from src/components/ui/." |
-| Slow | "This page takes several seconds to load. Find why and make it faster." |
-| Mobile broken | "On a phone, [X] breaks. Make this page fully responsive." |
-| Pre-demo | "Check the whole project for anything broken, unfinished or insecure. List it by importance." |
-| Save | "Commit everything with a clear message and push to GitHub." |
+- [x] 🟢 Audited all 7 rows of `docs/FEATURES.md` §11 against what was already built. 5 of the 7
+      were already enforced at the point of action from earlier phases (course count — Phase F,
+      AI questions/day — Phase H, sub-admin seats — Phase N, anti-cheat/branding — Phases K/M) —
+      only the one genuine gap needed new work: **quiz max-attempts wasn't capped by plan at all.**
+      `plan_limits.max_quiz_attempts` (Free 2, Pro 5, Institution unlimited) existed in the schema
+      but nothing read it — an admin could type any number, including 0 (unlimited), into a quiz's
+      "Maximum attempts" field regardless of plan. Added `assertMaxAttemptsWithinPlan()`, called
+      from both `createQuiz` and `updateQuiz` before any write.
+- [x] 🟢 New `src/lib/plan-limits.ts` — a `PLAN_LIMIT:`-prefixed error convention (the same
+      strip-the-prefix trick the signup trigger already uses) so a form can tell "this was a plan
+      limit, show the upgrade card" apart from an ordinary validation error, surviving the fact
+      that a Server Action's thrown Error loses everything but `.message` crossing back to the
+      client. `src/components/ui/UpgradePrompt.tsx` — one reusable component matching the
+      `docs/FEATURES.md` §11 mockup, wired into `CourseForm`, `QuizForm`, and the Sub-Admins invite
+      card everywhere a limit can block a submit, plus swapped in for the Settings page's existing
+      hand-rolled "Upgrade to Pro" card so all four use the same component. The upgrade button
+      stays disabled/"coming soon" — taking payment is explicitly out of scope for now.
+- [x] 🟡 **Tested live, not just read the code.** Seeded a real Free-plan academy, filled its
+      3-course quota, then tried a 4th through the actual form — blocked server-side with the
+      upgrade card rendering the exact right message ("You've reached the free plan limit of 3
+      courses"), disabled `$19/month` button, and confirmed **zero rows written**. Separately built
+      a real quiz with "Maximum attempts" set to 5 (above the Free cap of 2) — blocked before any
+      insert, upgrade card showed the max-attempts message; the same quiz built with exactly 2
+      succeeded and saved correctly, confirming the boundary is `> 2`, not `>= 2`. Test data (org,
+      profile, 3 seed courses, the quiz, auth user) deleted afterward.
+
+---
+
+## Phase P — Platform-owner area ✅ 🟢🟡
+
+Not in the original spec files — added because a paid product needs someone to run it. This is
+Talha's own control panel, separate from every academy's dashboard.
+
+- [x] 🔵 Talha confirmed his platform-owner email in chat (`talhawork257@gmail.com`); added to
+      `.env.local` as `PLATFORM_OWNER_EMAILS`.
+- [x] 🟢 `/platform` gated by that env allowlist server-side (`src/lib/require-platform-owner.ts`,
+      re-checked in `src/proxy.ts` AND in `src/app/platform/layout.tsx` AND inside every Server
+      Action under `src/app/platform/actions.ts` — a Server Action can be called directly,
+      bypassing middleware entirely, so the allowlist check has to live in all three places, not
+      just the page route). Never a database role a customer account could reach. The area uses the
+      **service-role client**, not the normal session client — the entire point is seeing every
+      organization at once, which no RLS-scoped client could ever do by design; the allowlist check
+      is what makes that bypass safe.
+- [x] 🟢 One `/platform` page: totals bar (academies, students, quizzes, attempts across
+      everyone) plus a table of every organization — name, owner email, plan, student count, quiz
+      count, signup date, suspended status. Per-org student/quiz counts are grouped in JS from two
+      flat queries rather than N+1 round trips or a new SQL function, since this is one low-traffic
+      admin screen at a handful-of-academies scale.
+- [x] 🟢 One click to change an organization's plan (a `<select>` per row) and to suspend/unsuspend
+      one. Suspension is new: added `organizations.is_suspended` (didn't exist — Talha's spec never
+      described *how* suspend would actually stop anyone) and wired it into `src/proxy.ts` and the
+      login page exactly like the existing `profiles.is_active` deactivation check — a suspended
+      org's members, any role, are signed out and sent to `/login?suspended=1` the moment they hit
+      a protected route or try to log in.
+- [x] 🟡 **Found and fixed a real bug live, not caught by `npm run build`.** The very first live
+      login test after adding the suspension check failed with "This account has been deactivated"
+      for a perfectly active, non-suspended test account. Root cause: `organizations` has **two**
+      foreign keys to/from `profiles` (`profiles.organization_id → organizations.id`, and
+      `organizations.owner_id → profiles.id`), so PostgREST's embed shorthand
+      `profiles(...organizations(is_suspended))` is ambiguous (error `PGRST201`) — it silently
+      returned no data instead of erring loudly, which the pre-existing `!profile` fallback then
+      mistook for "no profile found" and reported as the wrong, misleading error. Fixed in both
+      `src/proxy.ts` and the login page by naming the relationship explicitly:
+      `organizations!profiles_organization_id_fkey(is_suspended)`. Audited the rest of the codebase
+      for the same unqualified-embed pattern between exactly these two tables — no other call site
+      had it (every other embed of `organizations`/`profiles` is from a third table like
+      `certificates` or `quiz_attempts`, which only has one FK path to each, so no ambiguity there).
+- [x] 🟡 **Tested live end-to-end**, not just read the code. Temporarily added a throwaway test
+      email to the allowlist alongside Talha's real one (never touched his actual account — I don't
+      have his password and never will), restarted the dev server, then: signed up a normal
+      "customer" academy and confirmed `/platform` redirects it away; logged in as the allowlisted
+      test email and confirmed the platform page renders both academies correctly; changed the
+      customer academy's plan free → pro through the real UI and confirmed it landed in the
+      database; suspended it through the real UI and confirmed a fresh login attempt for that
+      academy's admin is correctly blocked with "This academy's account is suspended." Removed the
+      test email from the allowlist and restarted the dev server again afterward, leaving only
+      Talha's real email configured. All test accounts, organizations, and profiles deleted.
+
+---
+
+## Phase Q — Polish + deploy 🟢🟡 (in progress — the two 🔵 steps are Talha's)
+
+- [x] 🟢 404 (`not-found.tsx`) and 500 (`error.tsx`) pages already existed from an earlier phase,
+      on-brand and reusing `EmptyState`. Spot-checked the newest, genuinely-unverified components
+      from this session (`UpgradePrompt`, the Sub-Admins permission matrix, `/privacy`) at a narrow
+      viewport and in dark mode — clean. The rest of the app's responsiveness/dark-mode was already
+      proven breakpoint-by-breakpoint in the phases that built it (Phase B's repaint, Phase C's
+      landing page); every component since has kept reusing that same token-driven system, so a
+      from-scratch re-sweep of all 154 files would be re-verifying, not verifying.
+- [x] 🟢 SEO: `metadataBase` + OpenGraph/Twitter tags in the root layout, a code-generated
+      `opengraph-image` (spruce/gold, no image asset needed — zero cost), `sitemap.ts` and
+      `robots.ts` (disallowing every private area: dashboard, student, platform, quiz, api),
+      and real `/privacy` and `/terms` pages — the footer already linked to both, previously dead
+      links. Both pages are a solid honest first draft reflecting what the app actually does and
+      who it actually shares data with (Supabase, Google Gemini via each academy's own BYOK key,
+      Resend, Vercel) — **not legal advice**; Talha should have a lawyer glance at them before
+      relying on them for a paying customer base. Both also use a placeholder contact email
+      (`privacy@example.com` / `support@example.com`) — swap in real ones before launch.
+- [x] 🟢 **Security pass found and fixed a real, live-exploitable bug**, not just a checklist tick.
+      `organizations`' RLS is row-level only (`owner_id = auth.uid()`, no column restriction) — the
+      same class of gap the `profiles` column-guard trigger already exists to close, but
+      `organizations` never got the equivalent. That meant any academy owner's own (unmodified)
+      session could `PATCH` their own org's `plan` or (as of this phase) `is_suspended` directly via
+      a raw REST call, self-upgrading to Institution for free or un-suspending themselves — entirely
+      bypassing both the plan-limits system and the platform-owner's suspend control. Fixed with a
+      new `organizations_prevent_self_plan_escalation` trigger mirroring the existing profiles one
+      exactly (exempts `auth.uid() is null`, i.e. the service-role client `/platform`'s own actions
+      use — never a normal session). **Verified live**: reproduced the exploit against a real
+      throwaway academy first (confirmed it worked before the fix), applied the trigger, reproduced
+      it again (now correctly rejected, `plan` unchanged in the database), confirmed the legitimate
+      settings name/logo update still works, and confirmed the real service-role path (what
+      `/platform`'s plan-change and suspend actions actually use) still succeeds — the first attempt
+      at that last check gave a false "blocked" reading because my own test script leaked a cached
+      browser session into what was supposed to be a clean service-role client; redone correctly
+      with `persistSession: false` (matching `createServiceClient()` exactly), it passed. Also
+      confirmed via `pg_policies`: no secret env var (`SUPABASE_SERVICE_ROLE_KEY`, `GEMINI_API_KEY`,
+      `RESEND_API_KEY`, `ENCRYPTION_KEY`) is referenced from any `"use client"` file, and every
+      `createServiceClient()` call site is server-only. `get_advisors` clean at the same pre-existing
+      baseline as every earlier phase.
+- [ ] 🔵 **Your turn:** Create a Vercel project, import the GitHub repo, add the env vars — the
+      same 6 already in `.env.local` (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
+      `SUPABASE_SERVICE_ROLE_KEY`, `GEMINI_API_KEY`, `RESEND_API_KEY`, `ENCRYPTION_KEY`) plus
+      `PLATFORM_OWNER_EMAILS` — then deploy. `NEXT_PUBLIC_SITE_URL` is optional: leave it unset and
+      the OG image/sitemap/robots.txt correctly self-detect the live Vercel address automatically.
+- [ ] 🔵 **Your turn:** Once deployed, point Supabase's Auth → URL Configuration at the live Vercel
+      address (Site URL + Redirect URLs) — without this, login/signup will redirect back to
+      localhost from the deployed site.
+- [ ] 🟡 Full live journey on the **deployed** site, not localhost — I can drive this myself once
+      it's live, the same way every other phase's live test worked this session.
+- [ ] 🟡 Phone check over real mobile data, both themes — this one needs an actual phone, so it's
+      yours to do (or tell me and I'll walk you through what to look for).
+
+---
+
+## Known limits — real, not bugs
+
+Same three as `CLAUDE.md`: Resend only reaches Talha's own address until a domain is bought;
+Vercel functions die at 60s so generation must stay chunked; Supabase free tier pauses after 7
+days idle — check before every demo.

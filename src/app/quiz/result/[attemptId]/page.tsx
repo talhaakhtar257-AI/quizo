@@ -9,6 +9,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { IneligibleNotice } from "@/components/user/IneligibleNotice";
 import { Card, buttonVariants } from "@/components/ui";
 import { formatDuration } from "@/lib/format";
+import { OPTION_KEYS, type Difficulty, type OptionKey } from "@/lib/quiz-engine";
 import { QuestionReviewList, type ReviewAnswer } from "@/components/QuestionReviewList";
 import { ExitFullscreenOnMount } from "./ExitFullscreenOnMount";
 
@@ -24,12 +25,12 @@ export default async function QuizResultPage({
   const supabase = createServiceClient();
 
   const { data: attempt } = await supabase
-    .from("attempts")
+    .from("quiz_attempts")
     .select(
-      "id, quiz_id, user_id, status, score, percentage, passed, total_questions, started_at, submitted_at, quizzes(title, passing_percent, courses(title))"
+      "id, quiz_id, student_id, status, score, total_correct, total_questions, started_at, submitted_at, quizzes(title, passing_score, courses(name))"
     )
     .eq("id", attemptId)
-    .eq("user_id", currentUser.id)
+    .eq("student_id", currentUser.id)
     .maybeSingle();
 
   if (!attempt) {
@@ -43,31 +44,14 @@ export default async function QuizResultPage({
   const { data: answers } = await supabase
     .from("attempt_answers")
     .select(
-      "id, question_id, selected_option_id, is_correct, difficulty_at_time, question_order, questions(question_text, scenario_text, explanation)"
+      "id, question_id, selected_option, is_correct, difficulty_at_time, display_order, pool_questions(question_text, explanation, option_a, option_b, option_c, option_d, correct_option)"
     )
     .eq("attempt_id", attemptId)
-    .order("question_order");
-
-  const questionIds = (answers ?? []).map((answer) => answer.question_id);
-  const { data: allOptions } =
-    questionIds.length > 0
-      ? await supabase
-          .from("options")
-          .select("id, question_id, option_text, is_correct, option_order")
-          .in("question_id", questionIds)
-          .order("option_order")
-      : { data: [] };
-
-  const optionsByQuestion = new Map<string, typeof allOptions>();
-  for (const option of allOptions ?? []) {
-    const list = optionsByQuestion.get(option.question_id) ?? [];
-    list.push(option);
-    optionsByQuestion.set(option.question_id, list);
-  }
+    .order("display_order");
 
   const { data: certificate } = await supabase
     .from("certificates")
-    .select("certificate_code")
+    .select("certificate_number")
     .eq("attempt_id", attemptId)
     .maybeSingle();
 
@@ -77,23 +61,33 @@ export default async function QuizResultPage({
       ? Math.max(0, Math.round((new Date(attempt.submitted_at).getTime() - new Date(attempt.started_at).getTime()) / 1000))
       : null;
 
-  const passed = attempt.passed ?? false;
+  const passingScore = attempt.quizzes?.passing_score ?? 70;
+  const score = attempt.score ?? 0;
+  const passed = score >= passingScore;
 
-  const reviewAnswers: ReviewAnswer[] = (answers ?? []).map((answer) => ({
-    id: answer.id,
-    questionOrder: answer.question_order,
-    isCorrect: answer.is_correct,
-    difficultyAtTime: answer.difficulty_at_time,
-    selectedOptionId: answer.selected_option_id,
-    scenarioText: answer.questions?.scenario_text ?? null,
-    questionText: answer.questions?.question_text ?? "",
-    explanation: answer.questions?.explanation ?? null,
-    options: (optionsByQuestion.get(answer.question_id) ?? []).map((option) => ({
-      id: option.id,
-      optionText: option.option_text,
-      isCorrect: option.is_correct,
-    })),
-  }));
+  const reviewAnswers: ReviewAnswer[] = (answers ?? []).map((answer, index) => {
+    const question = answer.pool_questions;
+    const optionText: Record<OptionKey, string> = {
+      a: question?.option_a ?? "",
+      b: question?.option_b ?? "",
+      c: question?.option_c ?? "",
+      d: question?.option_d ?? "",
+    };
+    return {
+      id: answer.id,
+      questionOrder: answer.display_order ?? index + 1,
+      isCorrect: answer.is_correct ?? false,
+      difficultyAtTime: answer.difficulty_at_time as Difficulty,
+      selectedOptionId: answer.selected_option,
+      questionText: question?.question_text ?? "",
+      explanation: question?.explanation ?? null,
+      options: OPTION_KEYS.map((key) => ({
+        id: key,
+        optionText: optionText[key],
+        isCorrect: question?.correct_option === key,
+      })),
+    };
+  });
 
   return (
     <div className="mx-auto min-h-screen max-w-2xl space-y-6 p-4 sm:p-6">
@@ -102,7 +96,7 @@ export default async function QuizResultPage({
       <Card className="space-y-4 p-6 text-center">
         <div>
           <p className="text-sm text-fg-secondary">{attempt.quizzes?.title ?? "Quiz"}</p>
-          <p className="text-5xl font-bold text-fg">{attempt.percentage ?? 0}%</p>
+          <p className="text-5xl font-bold text-fg">{score}%</p>
         </div>
 
         <div
@@ -117,7 +111,7 @@ export default async function QuizResultPage({
 
         <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-fg-secondary">
           <span>
-            {attempt.score ?? 0} / {attempt.total_questions ?? 0} correct
+            {attempt.total_correct ?? 0} / {attempt.total_questions ?? 0} correct
           </span>
           {timeTakenSeconds !== null && <span>Time taken: {formatDuration(timeTakenSeconds)}</span>}
           {hardCount > 0 && (
@@ -130,12 +124,12 @@ export default async function QuizResultPage({
 
         <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
           {passed && certificate && (
-            <Link href={`/certificates/${certificate.certificate_code}`} className={buttonVariants({})}>
+            <Link href={`/certificates/${certificate.certificate_number}`} className={buttonVariants({})}>
               <Award className="size-4" />
               Download Certificate
             </Link>
           )}
-          <Link href="/dashboard" className={buttonVariants({ variant: "secondary" })}>
+          <Link href="/student" className={buttonVariants({ variant: "secondary" })}>
             Back to Dashboard
           </Link>
         </div>

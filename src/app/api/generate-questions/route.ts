@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { requireAdmin } from "@/lib/require-admin";
+import { requirePermission } from "@/lib/permissions";
+import { decrypt } from "@/lib/crypto";
+import { GEMINI_MODEL } from "@/lib/gemini";
 import { buildPrompt, parseGeneratedQuestions, type Difficulty } from "./prompt";
 
 // 100 questions in one Gemini call can take close to a minute — give this
@@ -9,15 +11,18 @@ export const maxDuration = 60;
 
 interface RequestBody {
   contentId?: string;
-  quizId?: string;
+  poolId?: string;
   questionCount?: number;
   difficulty?: Difficulty;
 }
 
 export async function POST(request: Request) {
-  let supabase: Awaited<ReturnType<typeof requireAdmin>>;
+  let supabase: Awaited<ReturnType<typeof requirePermission>>["supabase"];
+  let organizationId: string;
   try {
-    supabase = await requireAdmin();
+    const ctx = await requirePermission("create_quiz");
+    supabase = ctx.supabase;
+    organizationId = ctx.orgId;
   } catch (error) {
     const message = error instanceof Error ? error.message : "Admin access required.";
     return NextResponse.json({ error: message }, { status: message.includes("logged in") ? 401 : 403 });
@@ -30,9 +35,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
 
-  const { contentId, quizId, questionCount, difficulty } = body;
+  const { contentId, poolId, questionCount, difficulty } = body;
 
-  if (!contentId || !quizId || !questionCount || !difficulty) {
+  if (!contentId || !poolId || !questionCount || !difficulty) {
     return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
   }
   if (!["easy", "medium", "hard"].includes(difficulty)) {
@@ -43,6 +48,22 @@ export async function POST(request: Request) {
       { error: "Question count must be between 1 and 100." },
       { status: 400 }
     );
+  }
+
+  // The pool ties this generation call back to its quiz + course, needed
+  // for the daily limit check (per-course, per docs/FEATURES.md §4) and to
+  // log usage against the right course.
+  const { data: pool } = await supabase
+    .from("quiz_pools")
+    .select("quiz_id, quizzes(course_id)")
+    .eq("id", poolId)
+    .maybeSingle();
+  if (!pool) {
+    return NextResponse.json({ error: "Quiz pool not found." }, { status: 404 });
+  }
+  const courseId = (pool.quizzes as unknown as { course_id: string } | null)?.course_id;
+  if (!courseId) {
+    return NextResponse.json({ error: "Quiz pool not found." }, { status: 404 });
   }
 
   const { data: content } = await supabase
@@ -62,19 +83,62 @@ export async function POST(request: Request) {
     );
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
+  // BYOK: decrypt this academy's own key, never a shared platform key.
+  const { data: org } = await supabase.from("organizations").select("plan").eq("id", organizationId).single();
+  const { data: settings } = await supabase
+    .from("organization_settings")
+    .select("gemini_api_key")
+    .eq("organization_id", organizationId)
+    .single();
+
+  if (!settings?.gemini_api_key) {
     return NextResponse.json(
-      { error: "The AI service isn't configured yet. Contact your developer." },
+      { error: "Add your Gemini API key in Settings before generating questions." },
+      { status: 400 }
+    );
+  }
+
+  const { data: limits } = await supabase
+    .from("plan_limits")
+    .select("max_ai_questions_per_day")
+    .eq("plan", org?.plan ?? "free")
+    .single();
+  const dailyLimit = limits?.max_ai_questions_per_day ?? 15;
+
+  if (dailyLimit !== -1) {
+    const startOfDay = new Date();
+    startOfDay.setUTCHours(0, 0, 0, 0);
+    const { data: usageRows } = await supabase
+      .from("ai_usage_log")
+      .select("questions_generated")
+      .eq("course_id", courseId)
+      .gte("created_at", startOfDay.toISOString());
+    const usedToday = (usageRows ?? []).reduce((sum, row) => sum + row.questions_generated, 0);
+
+    if (usedToday + questionCount > dailyLimit) {
+      const remaining = Math.max(0, dailyLimit - usedToday);
+      return NextResponse.json(
+        {
+          error: `Daily AI limit reached for this course (${dailyLimit}/day on the ${org?.plan ?? "free"} plan). ${remaining} question(s) remaining today.`,
+        },
+        { status: 429 }
+      );
+    }
+  }
+
+  let apiKey: string;
+  try {
+    apiKey = decrypt(settings.gemini_api_key);
+  } catch {
+    return NextResponse.json(
+      { error: "Your saved Gemini key could not be read. Please re-enter it in Settings." },
       { status: 500 }
     );
   }
 
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({
-    // gemini-2.0-flash was retired by Google (404 "no longer available");
-    // this is their own suggested replacement, confirmed working.
-    model: "gemini-3.6-flash",
+    model: GEMINI_MODEL,
     generationConfig: { responseMimeType: "application/json" },
   });
 
@@ -102,20 +166,28 @@ export async function POST(request: Request) {
   }
 
   const rows = generated.slice(0, questionCount);
+  const letters = ["a", "b", "c", "d"] as const;
 
   const { data: insertedQuestions, error: insertError } = await supabase
-    .from("questions")
+    .from("pool_questions")
     .insert(
-      rows.map((question) => ({
-        quiz_id: quizId,
-        difficulty,
-        question_type: "scenario" as const,
-        scenario_text: question.scenario_text,
-        question_text: question.question_text,
-        explanation: question.explanation,
-        is_approved: false,
-        generated_by_ai: true,
-      }))
+      rows.map((question) => {
+        const correctIndex = question.options.findIndex((option) => option.is_correct);
+        return {
+          organization_id: organizationId,
+          pool_id: poolId,
+          difficulty,
+          question_text: `${question.scenario_text}\n\n${question.question_text}`,
+          option_a: question.options[0]?.option_text ?? "",
+          option_b: question.options[1]?.option_text ?? "",
+          option_c: question.options[2]?.option_text ?? "",
+          option_d: question.options[3]?.option_text ?? "",
+          correct_option: letters[correctIndex] ?? "a",
+          explanation: question.explanation,
+          is_approved: false,
+          generated_by_ai: true,
+        };
+      })
     )
     .select("id");
 
@@ -126,25 +198,12 @@ export async function POST(request: Request) {
     );
   }
 
-  const optionRows = insertedQuestions.flatMap((question, index) =>
-    rows[index].options.map((option, optionIndex) => ({
-      question_id: question.id,
-      option_text: option.option_text,
-      is_correct: option.is_correct,
-      option_order: optionIndex + 1,
-    }))
-  );
-
-  const { error: optionsError } = await supabase.from("options").insert(optionRows);
-  if (optionsError) {
-    return NextResponse.json(
-      {
-        error:
-          "Questions were saved but their answer options could not be saved. Please try again.",
-      },
-      { status: 500 }
-    );
-  }
+  await supabase.from("ai_usage_log").insert({
+    organization_id: organizationId,
+    course_id: courseId,
+    quiz_id: pool.quiz_id,
+    questions_generated: insertedQuestions.length,
+  });
 
   return NextResponse.json({ count: insertedQuestions.length, requested: questionCount });
 }
@@ -156,7 +215,7 @@ function describeGeminiError(error: unknown): string {
       return "The daily AI quota has been used up. Try again tomorrow.";
     }
     if (status === 400 || status === 401 || status === 403) {
-      return "The AI service rejected the request. Check that the Gemini API key is set correctly.";
+      return "The AI service rejected the request. Check that your Gemini API key is set correctly in Settings.";
     }
   }
   if (error instanceof SyntaxError) {

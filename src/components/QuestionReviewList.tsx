@@ -14,7 +14,6 @@ export interface ReviewAnswer {
   isCorrect: boolean;
   difficultyAtTime: Difficulty;
   selectedOptionId: string | null;
-  scenarioText: string | null;
   questionText: string;
   explanation: string | null;
   options: ReviewOption[];
@@ -56,12 +55,6 @@ export function QuestionReviewList({ answers }: { answers: ReviewAnswer[] }) {
               </div>
               <DifficultyIndicator difficulty={answer.difficultyAtTime} />
             </div>
-
-            {answer.scenarioText && (
-              <p className="rounded-md bg-info-bg p-3 text-sm leading-relaxed text-fg">
-                {answer.scenarioText}
-              </p>
-            )}
 
             <p className="font-medium text-fg">{answer.questionText}</p>
 

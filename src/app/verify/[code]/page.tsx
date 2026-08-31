@@ -17,13 +17,13 @@ export default async function VerifyCertificatePage({
   const { data: certificate } = await supabase
     .from("certificates")
     .select(
-      "certificate_code, issued_at, attempts(percentage, quizzes(title, courses(title))), profiles(full_name)"
+      "certificate_number, score, issued_at, quizzes(title, courses(name)), profiles(full_name), organizations(name)"
     )
-    .eq("certificate_code", code)
+    .eq("certificate_number", code)
     .maybeSingle();
 
   return (
-    <div className="flex min-h-full flex-1 items-center justify-center bg-background p-4">
+    <div className="flex min-h-full flex-1 items-center justify-center bg-bg p-4">
       <div className="w-full max-w-md">
         <Card className="space-y-4 p-6 text-center">
           {certificate ? (
@@ -40,25 +40,32 @@ export default async function VerifyCertificatePage({
                   has successfully completed
                 </p>
                 <p className="mt-1 text-lg font-medium text-fg">
-                  {certificate.attempts?.quizzes?.title ?? "Quiz"}
+                  {certificate.quizzes?.title ?? "Quiz"}
                 </p>
-                {certificate.attempts?.quizzes?.courses?.title && (
+                {certificate.quizzes?.courses?.name && (
                   <p className="text-sm text-fg-secondary">
-                    {certificate.attempts.quizzes.courses.title}
+                    {certificate.quizzes.courses.name}
+                  </p>
+                )}
+                {certificate.organizations?.name && (
+                  <p className="mt-1 text-xs font-medium uppercase tracking-wide text-fg-muted">
+                    Issued by {certificate.organizations.name}
                   </p>
                 )}
               </div>
               <div className="flex items-center justify-center gap-6 border-t border-border pt-4 text-sm">
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-fg-muted">Score</p>
-                  <p className="mt-1 font-semibold text-fg">{certificate.attempts?.percentage ?? 0}%</p>
+                  <p className="mt-1 font-semibold text-fg">{certificate.score}%</p>
                 </div>
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-fg-muted">Date Issued</p>
-                  <p className="mt-1 font-semibold text-fg">{formatDate(certificate.issued_at)}</p>
+                  <p className="mt-1 font-semibold text-fg">
+                    {certificate.issued_at ? formatDate(certificate.issued_at) : "—"}
+                  </p>
                 </div>
               </div>
-              <p className="text-xs text-fg-muted">{certificate.certificate_code}</p>
+              <p className="text-xs text-fg-muted">{certificate.certificate_number}</p>
             </>
           ) : (
             <>

@@ -2,20 +2,21 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button, DifficultyIndicator, LoadingSpinner } from "@/components/ui";
+import { Eye } from "lucide-react";
+import { Badge, Button, DifficultyIndicator, LoadingSpinner, useToast } from "@/components/ui";
 import { IneligibleNotice } from "@/components/user/IneligibleNotice";
 import { cn } from "@/lib/utils";
-import type { Difficulty } from "@/lib/quiz-engine";
+import type { Difficulty, OptionKey } from "@/lib/quiz-engine";
+import type { CheatEventType } from "@/lib/anti-cheat";
 
 interface QuestionOption {
-  id: string;
+  key: OptionKey;
   text: string;
 }
 
 interface QuestionState {
   questionId: string;
   questionText: string;
-  scenarioText: string | null;
   difficulty: Difficulty;
   options: QuestionOption[];
   questionNumber: number;
@@ -31,7 +32,7 @@ async function postWithRetry(
   url: string,
   body: unknown,
   onRetry: (attempt: number) => void
-): Promise<{ ok: true; data: Record<string, unknown> } | { ok: false }> {
+): Promise<{ ok: true; json: Record<string, unknown> } | { ok: false }> {
   for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
     try {
       const res = await fetch(url, {
@@ -40,8 +41,8 @@ async function postWithRetry(
         body: JSON.stringify(body),
       });
       if (res.status >= 500) throw new Error("Server error");
-      const data = await res.json();
-      return { ok: true, data };
+      const json = await res.json();
+      return { ok: true, json };
     } catch {
       if (attempt < RETRY_DELAYS_MS.length) {
         onRetry(attempt + 1);
@@ -86,31 +87,111 @@ function TimerBadge({ secondsRemaining, totalSeconds }: { secondsRemaining: numb
 }
 
 export function QuizAttemptScreen({
+  quizId,
   attemptId,
-  timerMinutes,
+  timeLimitMinutes,
+  hasFullAntiCheat,
 }: {
+  quizId: string;
   attemptId: string;
-  timerMinutes: number;
+  timeLimitMinutes: number | null;
+  hasFullAntiCheat: boolean;
 }) {
   const router = useRouter();
-  const totalSeconds = timerMinutes * 60;
+  const { showToast } = useToast();
+  const hasTimer = timeLimitMinutes !== null;
+  const totalSeconds = hasTimer ? timeLimitMinutes * 60 : Number.MAX_SAFE_INTEGER;
 
   const [question, setQuestion] = useState<QuestionState | null>(null);
-  const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
+  const [selectedKey, setSelectedKey] = useState<OptionKey | null>(null);
   const [phase, setPhase] = useState<Phase>("loading");
   const [secondsRemaining, setSecondsRemaining] = useState(totalSeconds);
   const [connectionState, setConnectionState] = useState<ConnectionState>("ok");
   const [finishingMessage, setFinishingMessage] = useState<string | null>(null);
   const [fatalError, setFatalError] = useState<string | null>(null);
   const [fullscreenLost, setFullscreenLost] = useState(false);
+  const [tabSwitchCount, setTabSwitchCount] = useState(0);
 
   const phaseRef = useRef(phase);
   phaseRef.current = phase;
   const autoSubmittedRef = useRef(false);
+  const questionStartRef = useRef(Date.now());
+  // Pro/Institution only (FEATURES.md §7) — Free students still see the
+  // tab-switch toast + counter below, it just never reaches the server, so
+  // there is nothing for the admin integrity report to read for a Free org.
+  const eventBufferRef = useRef<{ type: CheatEventType; timestamp: string; metadata?: Record<string, unknown> }[]>(
+    []
+  );
+
+  const apiUrl = useCallback((path: string) => `/api/student/quiz/${quizId}/${path}`, [quizId]);
+
+  const pushEvent = useCallback(
+    (type: CheatEventType, metadata?: Record<string, unknown>) => {
+      if (!hasFullAntiCheat) return;
+      eventBufferRef.current.push({ type, timestamp: new Date().toISOString(), metadata });
+    },
+    [hasFullAntiCheat]
+  );
+
+  const flushEvents = useCallback(() => {
+    if (eventBufferRef.current.length === 0) return;
+    const events = eventBufferRef.current;
+    eventBufferRef.current = [];
+    fetch("/api/student/quiz/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ attempt_id: attemptId, events }),
+      keepalive: true,
+    }).catch(() => {
+      // Best-effort — a lost batch of anti-cheat events never blocks or
+      // rolls back the quiz itself.
+    });
+  }, [attemptId]);
+
+  useEffect(() => {
+    const interval = setInterval(flushEvents, 30000);
+    return () => {
+      clearInterval(interval);
+      flushEvents();
+    };
+  }, [flushEvents]);
 
   const goToResult = useCallback(() => {
+    flushEvents();
     router.replace(`/quiz/result/${attemptId}`);
-  }, [attemptId, router]);
+  }, [attemptId, router, flushEvents]);
+
+  // Tab-switch detection is active for every plan — Free students see the
+  // warning too, only the server-side log is gated.
+  useEffect(() => {
+    function handleVisibilityChange() {
+      if (document.hidden) {
+        setTabSwitchCount((count) => count + 1);
+        showToast("Tab switch detected. This is recorded.", "warning");
+        pushEvent("tab_switch");
+      }
+    }
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [showToast, pushEvent]);
+
+  // Copy/paste blocking is Pro/Institution only.
+  useEffect(() => {
+    if (!hasFullAntiCheat) return;
+    function blockClipboard(event: ClipboardEvent) {
+      event.preventDefault();
+      showToast("Copying is disabled during this quiz.", "warning");
+      pushEvent(event.type === "paste" ? "paste_attempt" : "copy_attempt");
+    }
+    document.addEventListener("copy", blockClipboard);
+    document.addEventListener("cut", blockClipboard);
+    document.addEventListener("paste", blockClipboard);
+    return () => {
+      document.removeEventListener("copy", blockClipboard);
+      document.removeEventListener("cut", blockClipboard);
+      document.removeEventListener("paste", blockClipboard);
+    };
+  }, [hasFullAntiCheat, showToast, pushEvent]);
 
   // Enter fullscreen defensively — covers a direct URL visit or a page
   // refresh, in addition to the request already made from the start screen.
@@ -123,11 +204,13 @@ export function QuizAttemptScreen({
 
   useEffect(() => {
     function handleChange() {
-      setFullscreenLost(!document.fullscreenElement);
+      const lost = !document.fullscreenElement;
+      setFullscreenLost(lost);
+      if (lost) pushEvent("fullscreen_exit");
     }
     document.addEventListener("fullscreenchange", handleChange);
     return () => document.removeEventListener("fullscreenchange", handleChange);
-  }, []);
+  }, [pushEvent]);
 
   useEffect(() => {
     function handleBeforeUnload(event: BeforeUnloadEvent) {
@@ -140,7 +223,7 @@ export function QuizAttemptScreen({
   }, []);
 
   const loadNextQuestion = useCallback(async () => {
-    const result = await postWithRetry("/api/quiz/next-question", { attemptId }, () =>
+    const result = await postWithRetry(apiUrl("next-question"), { attempt_id: attemptId }, () =>
       setConnectionState("retrying")
     );
     if (!result.ok) {
@@ -148,13 +231,15 @@ export function QuizAttemptScreen({
       return;
     }
     setConnectionState("ok");
-    const data = result.data;
+    const body = result.json;
 
-    if (data.error) {
+    if (body.error) {
       setPhase("error");
-      setFatalError(String(data.error));
+      setFatalError(String(body.error));
       return;
     }
+
+    const data = (body.data as Record<string, unknown>) ?? {};
 
     if (data.done) {
       setPhase("finishing");
@@ -162,19 +247,19 @@ export function QuizAttemptScreen({
       return;
     }
 
-    setSecondsRemaining(Number(data.secondsRemaining));
+    setSecondsRemaining(Number(data.time_remaining_seconds));
+    questionStartRef.current = Date.now();
     setQuestion({
-      questionId: String(data.questionId),
-      questionText: String(data.questionText),
-      scenarioText: (data.scenarioText as string | null) ?? null,
+      questionId: String(data.question_id),
+      questionText: String(data.question_text),
       difficulty: data.difficulty as Difficulty,
       options: data.options as QuestionOption[],
-      questionNumber: Number(data.questionNumber),
-      totalQuestions: Number(data.totalQuestions),
+      questionNumber: Number(data.question_number),
+      totalQuestions: Number(data.questions_to_show),
     });
-    setSelectedOptionId(null);
+    setSelectedKey(null);
     setPhase("question");
-  }, [attemptId, goToResult]);
+  }, [apiUrl, attemptId, goToResult]);
 
   useEffect(() => {
     loadNextQuestion();
@@ -186,17 +271,18 @@ export function QuizAttemptScreen({
   const handleTimeUp = useCallback(async () => {
     setPhase("finishing");
     setFinishingMessage("Time is up. Your quiz has been submitted.");
-    await fetch("/api/quiz/submit", {
+    await fetch(apiUrl("submit"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ attemptId }),
+      body: JSON.stringify({ attempt_id: attemptId }),
     }).catch(() => {});
     setTimeout(goToResult, 1500);
-  }, [attemptId, goToResult]);
+  }, [apiUrl, attemptId, goToResult]);
 
   // Local ticking clock for a smooth display; server responses (from
   // answering, the heartbeat, or hitting zero) always overwrite this.
   useEffect(() => {
+    if (!hasTimer) return;
     if (phase !== "question" && phase !== "advancing") return;
     const interval = setInterval(() => {
       setSecondsRemaining((prev) => {
@@ -211,14 +297,14 @@ export function QuizAttemptScreen({
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [phase, handleTimeUp]);
+  }, [phase, handleTimeUp, hasTimer]);
 
   // Server heartbeat every 30s so a dead browser loses at most 30 seconds
   // and the stored time_remaining_seconds stays fresh.
   useEffect(() => {
     const interval = setInterval(async () => {
       if (phaseRef.current === "finishing") return;
-      const result = await postWithRetry("/api/quiz/heartbeat", { attemptId }, () =>
+      const result = await postWithRetry(apiUrl("heartbeat"), { attempt_id: attemptId }, () =>
         setConnectionState("retrying")
       );
       if (!result.ok) {
@@ -226,28 +312,40 @@ export function QuizAttemptScreen({
         return;
       }
       setConnectionState("ok");
-      if (result.data.done) {
+      const data = (result.json.data as Record<string, unknown>) ?? {};
+      if (data.done) {
         setPhase("finishing");
         goToResult();
         return;
       }
-      if (typeof result.data.secondsRemaining === "number") {
-        setSecondsRemaining(result.data.secondsRemaining);
+      if (typeof data.time_remaining_seconds === "number") {
+        setSecondsRemaining(data.time_remaining_seconds);
       }
     }, 30000);
     return () => clearInterval(interval);
-  }, [attemptId, goToResult]);
+  }, [apiUrl, attemptId, goToResult]);
 
   async function handleNext() {
-    if (!question || !selectedOptionId || phase === "advancing") return;
+    if (!question || !selectedKey || phase === "advancing") return;
     setPhase("advancing");
+    const timeSpentSeconds = Math.max(0, Math.round((Date.now() - questionStartRef.current) / 1000));
     const result = await postWithRetry(
-      "/api/quiz/submit-answer",
-      { attemptId, questionId: question.questionId, selectedOptionId },
+      apiUrl("submit-answer"),
+      {
+        attempt_id: attemptId,
+        question_id: question.questionId,
+        selected_option: selectedKey,
+        time_spent_seconds: timeSpentSeconds,
+      },
       () => setConnectionState("retrying")
     );
     if (!result.ok) {
       setConnectionState("failed");
+      setPhase("question");
+      return;
+    }
+    if (result.json.error) {
+      setConnectionState("ok");
       setPhase("question");
       return;
     }
@@ -259,7 +357,7 @@ export function QuizAttemptScreen({
     if (phaseRef.current !== "question" || !question) return;
     if (event.key >= "1" && event.key <= "4") {
       const index = Number(event.key) - 1;
-      if (question.options[index]) setSelectedOptionId(question.options[index].id);
+      if (question.options[index]) setSelectedKey(question.options[index].key);
     } else if (event.key === "Enter") {
       handleNext();
     }
@@ -269,7 +367,7 @@ export function QuizAttemptScreen({
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [question, selectedOptionId]);
+  }, [question, selectedKey]);
 
   if (phase === "error" && fatalError) {
     return <IneligibleNotice reason={fatalError} />;
@@ -303,7 +401,14 @@ export function QuizAttemptScreen({
             <p className="text-sm font-medium text-fg-secondary">
               Question {question.questionNumber} of {question.totalQuestions}
             </p>
-            <TimerBadge secondsRemaining={secondsRemaining} totalSeconds={totalSeconds} />
+            <div className="flex items-center gap-3">
+              {tabSwitchCount > 0 && (
+                <Badge variant="warning" className="gap-1">
+                  <Eye className="size-3" /> {tabSwitchCount} tab switch{tabSwitchCount === 1 ? "" : "es"}
+                </Badge>
+              )}
+              {hasTimer && <TimerBadge secondsRemaining={secondsRemaining} totalSeconds={totalSeconds} />}
+            </div>
           </div>
           <div className="mx-auto mt-2 max-w-3xl">
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-raised">
@@ -342,23 +447,19 @@ export function QuizAttemptScreen({
           <div className="w-full max-w-2xl space-y-6">
             <DifficultyIndicator difficulty={question.difficulty} />
 
-            {question.scenarioText && (
-              <div className="rounded-lg bg-info-bg p-5 leading-relaxed text-fg">{question.scenarioText}</div>
-            )}
-
             <p className="text-xl font-semibold text-fg">{question.questionText}</p>
 
             <div className="space-y-3">
               {question.options.map((option, index) => (
                 <button
-                  key={option.id}
+                  key={option.key}
                   type="button"
                   disabled={phase === "advancing" || connectionState === "failed"}
-                  onClick={() => setSelectedOptionId(option.id)}
+                  onClick={() => setSelectedKey(option.key)}
                   className={cn(
                     "flex min-h-11 w-full items-center gap-3 rounded-lg border px-4 py-3 text-left text-base transition-colors",
                     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-                    selectedOptionId === option.id
+                    selectedKey === option.key
                       ? "border-primary bg-primary/10 text-fg"
                       : "border-border bg-surface text-fg hover:bg-surface-raised"
                   )}
@@ -379,7 +480,7 @@ export function QuizAttemptScreen({
           <div className="mx-auto flex max-w-2xl justify-end">
             <Button
               size="lg"
-              disabled={!selectedOptionId || phase === "advancing" || connectionState === "failed"}
+              disabled={!selectedKey || phase === "advancing" || connectionState === "failed"}
               loading={phase === "advancing"}
               onClick={handleNext}
             >
@@ -389,7 +490,7 @@ export function QuizAttemptScreen({
         </div>
       )}
 
-      {fullscreenLost && phase !== "finishing" && (
+      {hasFullAntiCheat && fullscreenLost && phase !== "finishing" && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
           <div className="max-w-sm rounded-xl border border-border bg-surface p-6 text-center shadow-lg">
             <p className="mb-4 text-sm font-medium text-fg">

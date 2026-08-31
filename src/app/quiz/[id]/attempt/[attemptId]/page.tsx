@@ -32,8 +32,10 @@ export default async function QuizAttemptPage({
 
   return (
     <QuizAttemptScreen
+      quizId={quizId}
       attemptId={attemptId}
-      timerMinutes={result.context.quiz.timerMinutes}
+      timeLimitMinutes={result.context.quiz.timeLimitMinutes}
+      hasFullAntiCheat={result.context.hasFullAntiCheat}
     />
   );
 }

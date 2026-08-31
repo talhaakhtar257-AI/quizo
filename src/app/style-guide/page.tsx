@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { Inbox } from "lucide-react";
+import { Inbox, MoreHorizontal } from "lucide-react";
 import {
   Button,
   Input,
@@ -20,6 +20,24 @@ import {
   LoadingSpinner,
   Skeleton,
   ThemeToggle,
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Switch,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from "@/components/ui";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -52,6 +70,7 @@ export default function StyleGuidePage() {
         <div className="flex flex-wrap items-center gap-3">
           <Button variant="primary">Primary</Button>
           <Button variant="secondary">Secondary</Button>
+          <Button variant="outline">Outline</Button>
           <Button variant="danger">Danger</Button>
           <Button variant="ghost">Ghost</Button>
           <Button loading>Loading</Button>
@@ -187,6 +206,83 @@ export default function StyleGuidePage() {
             <Skeleton className="h-4 w-2/3" />
           </div>
         </div>
+      </Section>
+
+      <Section title="Accordion (shadcn)">
+        <Accordion type="single" collapsible className="max-w-md">
+          <AccordionItem value="a">
+            <AccordionTrigger>Is Quizo really free?</AccordionTrigger>
+            <AccordionContent>
+              Yes — the Free plan gives you 3 courses with up to 25 students
+              each, forever.
+            </AccordionContent>
+          </AccordionItem>
+          <AccordionItem value="b">
+            <AccordionTrigger>Can students cheat?</AccordionTrigger>
+            <AccordionContent>
+              Questions and options are shuffled every attempt, so no two
+              screens look the same.
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      </Section>
+
+      <Section title="Tabs (shadcn)">
+        <Tabs defaultValue="builder" className="max-w-md">
+          <TabsList>
+            <TabsTrigger value="builder">Quiz Builder</TabsTrigger>
+            <TabsTrigger value="student">Student View</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          </TabsList>
+          <TabsContent value="builder" className="text-sm text-fg-secondary">
+            Type a topic and AI generates questions instantly.
+          </TabsContent>
+          <TabsContent value="student" className="text-sm text-fg-secondary">
+            One question at a time, adaptive difficulty.
+          </TabsContent>
+          <TabsContent value="analytics" className="text-sm text-fg-secondary">
+            See exactly how your students are performing.
+          </TabsContent>
+        </Tabs>
+      </Section>
+
+      <Section title="Select (shadcn)">
+        <Select defaultValue="adaptive">
+          <SelectTrigger className="w-56">
+            <SelectValue placeholder="Difficulty mode" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="adaptive">Adaptive</SelectItem>
+            <SelectItem value="easy_only">Easy only</SelectItem>
+            <SelectItem value="medium_only">Medium only</SelectItem>
+            <SelectItem value="hard_only">Hard only</SelectItem>
+          </SelectContent>
+        </Select>
+      </Section>
+
+      <Section title="Switch (shadcn)">
+        <div className="flex items-center gap-3">
+          <Switch id="notif" defaultChecked />
+          <label htmlFor="notif" className="text-sm text-fg">
+            Email me when a student enrolls
+          </label>
+        </div>
+      </Section>
+
+      <Section title="Dropdown menu (shadcn)">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="secondary" size="sm">
+              <MoreHorizontal className="size-4" />
+              Actions
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem>Edit course</DropdownMenuItem>
+            <DropdownMenuItem>Regenerate invite code</DropdownMenuItem>
+            <DropdownMenuItem className="text-danger">Delete</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </Section>
     </div>
   );

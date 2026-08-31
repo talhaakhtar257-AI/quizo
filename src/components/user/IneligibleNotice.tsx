@@ -10,7 +10,7 @@ export function IneligibleNotice({ reason }: { reason: string }) {
           <AlertTriangle className="size-6" />
         </div>
         <p className="text-sm text-fg-secondary">{reason}</p>
-        <Link href="/dashboard" className={buttonVariants({ variant: "secondary" })}>
+        <Link href="/student" className={buttonVariants({ variant: "secondary" })}>
           Back to Dashboard
         </Link>
       </Card>

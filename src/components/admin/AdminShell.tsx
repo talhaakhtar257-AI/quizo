@@ -10,6 +10,7 @@ import {
   ClipboardCheck,
   Users,
   ChartColumnBig,
+  Settings,
   Menu,
   X,
   LogOut,
@@ -19,26 +20,37 @@ import { signOut } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
-  { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/courses", label: "Courses", icon: BookOpen },
-  { href: "/admin/quizzes", label: "Quizzes", icon: ListChecks },
-  { href: "/admin/attempts", label: "Attempts", icon: ClipboardCheck },
-  { href: "/admin/users", label: "Users", icon: Users },
-  { href: "/admin/reports", label: "Reports", icon: ChartColumnBig },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, exact: true },
+  { href: "/dashboard/courses", label: "Courses", icon: BookOpen },
+  { href: "/dashboard/quizzes", label: "Quizzes", icon: ListChecks },
+  { href: "/dashboard/attempts", label: "Attempts", icon: ClipboardCheck },
+  { href: "/dashboard/users", label: "Students", icon: Users },
+  { href: "/dashboard/reports", label: "Reports", icon: ChartColumnBig },
+  { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
 export function AdminShell({
   userName,
   pendingCount = 0,
+  hideStudents = false,
+  hideReports = false,
   children,
 }: {
   userName: string;
   pendingCount?: number;
+  hideStudents?: boolean;
+  hideReports?: boolean;
   children: ReactNode;
 }) {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const navItems = NAV_ITEMS.filter((item) => {
+    if (hideStudents && item.href === "/dashboard/users") return false;
+    if (hideReports && item.href === "/dashboard/reports") return false;
+    return true;
+  });
 
   async function handleLogout() {
     await signOut();
@@ -74,8 +86,8 @@ export function AdminShell({
           </button>
         </div>
         <nav className="flex-1 space-y-1 overflow-y-auto px-3">
-          {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
-            const active = pathname.startsWith(href);
+          {navItems.map(({ href, label, icon: Icon, exact }) => {
+            const active = exact ? pathname === href : pathname.startsWith(href);
             return (
               <Link
                 key={href}
@@ -91,7 +103,7 @@ export function AdminShell({
               >
                 <Icon className="size-5" />
                 {label}
-                {href === "/admin/users" && pendingCount > 0 && (
+                {href === "/dashboard/users" && pendingCount > 0 && (
                   <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1.5 text-xs font-semibold text-white">
                     {pendingCount}
                   </span>
