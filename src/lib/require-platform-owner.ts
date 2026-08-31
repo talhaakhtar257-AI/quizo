@@ -1,13 +1,25 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
-function platformOwnerEmails(): Set<string> {
-  return new Set(
+export function platformOwnerEmails(): Set<string> {
+  const emails = new Set(
     (process.env.PLATFORM_OWNER_EMAILS ?? "")
       .split(",")
       .map((email) => email.trim().toLowerCase())
       .filter(Boolean)
   );
+
+  // An unset allowlist locks EVERYONE out of /platform, including the real
+  // owner, with nothing but a silent redirect to show for it — which is
+  // exactly what happened when this variable was set locally but never added
+  // to the deployment. Missing configuration should be loud.
+  if (emails.size === 0) {
+    console.error(
+      "[quizo] PLATFORM_OWNER_EMAILS is not set — the platform-owner area is unreachable for every account. Set it in the deployment's environment variables."
+    );
+  }
+
+  return emails;
 }
 
 // Gated by an env allowlist, never a database role — no combination of row

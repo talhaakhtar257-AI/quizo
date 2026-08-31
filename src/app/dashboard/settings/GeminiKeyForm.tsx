@@ -6,7 +6,13 @@ import { KeyRound, Trash2 } from "lucide-react";
 import { Button, Card, Input, useToast } from "@/components/ui";
 import { saveGeminiKey, removeGeminiKey } from "./actions";
 
-export function GeminiKeyForm({ maskedKey }: { maskedKey: string | null }) {
+export function GeminiKeyForm({
+  maskedKey,
+  aiIncluded,
+}: {
+  maskedKey: string | null;
+  aiIncluded: boolean;
+}) {
   const router = useRouter();
   const { showToast } = useToast();
   const [saving, setSaving] = useState(false);
@@ -48,18 +54,26 @@ export function GeminiKeyForm({ maskedKey }: { maskedKey: string | null }) {
         <KeyRound className="size-5 text-secondary" aria-hidden="true" />
         <h2 className="text-lg font-semibold text-fg">Gemini API Key</h2>
       </div>
-      <p className="mt-1 text-sm text-fg-secondary">
-        Your own free Google Gemini key powers AI question generation for your academy —
-        it keeps this platform free to run for everyone.{" "}
-        <a
-          href="https://aistudio.google.com/apikey"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="font-medium text-primary hover:underline"
-        >
-          Get a free key from Google AI Studio ↗
-        </a>
-      </p>
+      {aiIncluded ? (
+        <p className="mt-1 text-sm text-fg-secondary">
+          <span className="font-medium text-fg">AI is included on your plan</span> — question
+          generation works out of the box, nothing to set up. Add your own Google Gemini key below
+          only if you&apos;d rather your material went through your own Google account.
+        </p>
+      ) : (
+        <p className="mt-1 text-sm text-fg-secondary">
+          On the Free plan you bring your own free Google Gemini key to power question generation.
+          Paid plans include AI with no setup.{" "}
+          <a
+            href="https://aistudio.google.com/apikey"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-primary hover:underline"
+          >
+            Get a free key from Google AI Studio ↗
+          </a>
+        </p>
+      )}
 
       {!editing && maskedKey ? (
         <div className="mt-4 flex items-center justify-between rounded-md border border-border bg-surface-raised px-3 py-2.5">

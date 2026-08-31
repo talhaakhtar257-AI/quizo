@@ -72,9 +72,11 @@ export default function PrivacyPage() {
               </li>
               <li>
                 <strong>Google Gemini</strong> — generates quiz questions from an academy&apos;s
-                uploaded material. Each academy connects its own Gemini API key (&quot;bring your
-                own key&quot;), so an academy&apos;s content is sent to Google under that academy&apos;s
-                own account, not a shared one.
+                uploaded material. On the Free plan, each academy connects its own Gemini API key,
+                so its content reaches Google under that academy&apos;s own account. On paid plans
+                AI is included, so the material is sent to Google under Quizo&apos;s account
+                instead. A paid academy that prefers the former can still connect its own key in
+                Settings, and we will use it.
               </li>
               <li>
                 <strong>Resend</strong> — delivers transactional email (enrollment approvals, invite

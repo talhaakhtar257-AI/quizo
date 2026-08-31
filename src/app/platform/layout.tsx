@@ -1,16 +1,8 @@
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { createClient } from "@/lib/supabase/server";
+import { platformOwnerEmails } from "@/lib/require-platform-owner";
 import { PlatformShell } from "@/components/platform/PlatformShell";
-
-function platformOwnerEmails(): Set<string> {
-  return new Set(
-    (process.env.PLATFORM_OWNER_EMAILS ?? "")
-      .split(",")
-      .map((email) => email.trim().toLowerCase())
-      .filter(Boolean)
-  );
-}
 
 // `src/proxy.ts` already redirects anyone off the allowlist before a page
 // here ever renders — this is the Server Component's own re-check, same

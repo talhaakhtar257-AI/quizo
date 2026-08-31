@@ -16,7 +16,7 @@ const faqs = [
   },
   {
     q: "Do I need my own AI API key?",
-    a: "Yes — each academy uses their own free Google Gemini API key, on every plan. This is what keeps Quizo's own hosting costs at $0, and Gemini's free tier is generous enough for real use.",
+    a: "Only on the Free plan. Free academies connect their own free Google Gemini key (its free tier is generous enough for real use). Pro and Institution include AI in the price — nothing to create, nothing to paste, it just works. You can still connect your own key on a paid plan if you'd prefer your material went through your own Google account.",
   },
   {
     q: "Can I change plans later?",

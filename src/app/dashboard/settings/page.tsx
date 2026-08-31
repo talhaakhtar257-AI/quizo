@@ -133,7 +133,7 @@ export default async function SettingsPage() {
         hasCustomBranding={limits?.has_custom_branding ?? false}
       />
 
-      <GeminiKeyForm maskedKey={maskedKey} />
+      <GeminiKeyForm maskedKey={maskedKey} aiIncluded={(org?.plan ?? "free") !== "free"} />
 
       <Card className="p-6">
         <div className="flex items-center justify-between">

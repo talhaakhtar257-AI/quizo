@@ -16,7 +16,7 @@ const faqs = [
   },
   {
     q: "Do I need my own AI API key?",
-    a: "Yes — each academy uses their own free Google Gemini API key. This keeps your costs at $0 (Gemini's free tier is very generous). We guide you through setup in 2 minutes.",
+    a: "Only on the Free plan, where you connect your own free Google Gemini key — we walk you through it in about two minutes. Pro and Institution include AI, so there's nothing to set up: sign up and start generating.",
   },
   {
     q: "Can students cheat?",

@@ -9,6 +9,7 @@ interface Row {
 }
 
 const rows: Row[] = [
+  { label: "AI question generation", free: "Your own free key", pro: "Included", institution: "Included" },
   { label: "Courses", free: "3", pro: "Unlimited", institution: "Unlimited" },
   { label: "Students per course", free: "25", pro: "100", institution: "500" },
   { label: "AI questions / day / course", free: "15", pro: "50", institution: "200" },

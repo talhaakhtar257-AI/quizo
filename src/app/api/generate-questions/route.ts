@@ -83,7 +83,10 @@ export async function POST(request: Request) {
     );
   }
 
-  // BYOK: decrypt this academy's own key, never a shared platform key.
+  // AI is included on paid plans (the subscription pays for it) and BYOK on
+  // Free (so a non-paying academy still costs the platform nothing). An
+  // academy that sets its own key always uses it, on any plan — some
+  // institutions prefer their content to go through their own Google account.
   const { data: org } = await supabase.from("organizations").select("plan").eq("id", organizationId).single();
   const { data: settings } = await supabase
     .from("organization_settings")
@@ -91,9 +94,17 @@ export async function POST(request: Request) {
     .eq("organization_id", organizationId)
     .single();
 
-  if (!settings?.gemini_api_key) {
+  const plan = org?.plan ?? "free";
+  const platformKey = process.env.PLATFORM_GEMINI_API_KEY?.trim();
+  const aiIncluded = plan !== "free";
+
+  if (!settings?.gemini_api_key && !(aiIncluded && platformKey)) {
     return NextResponse.json(
-      { error: "Add your Gemini API key in Settings before generating questions." },
+      {
+        error: aiIncluded
+          ? "AI is included on your plan, but it isn't configured yet. Contact support."
+          : "Add your Gemini API key in Settings before generating questions.",
+      },
       { status: 400 }
     );
   }
@@ -127,13 +138,24 @@ export async function POST(request: Request) {
   }
 
   let apiKey: string;
-  try {
-    apiKey = decrypt(settings.gemini_api_key);
-  } catch {
-    return NextResponse.json(
-      { error: "Your saved Gemini key could not be read. Please re-enter it in Settings." },
-      { status: 500 }
-    );
+  if (settings?.gemini_api_key) {
+    try {
+      apiKey = decrypt(settings.gemini_api_key);
+    } catch {
+      // A paid academy shouldn't be dead in the water because its own saved
+      // key became unreadable (e.g. ENCRYPTION_KEY rotated) — fall back to the
+      // included platform key and let them re-enter theirs at their leisure.
+      if (aiIncluded && platformKey) {
+        apiKey = platformKey;
+      } else {
+        return NextResponse.json(
+          { error: "Your saved Gemini key could not be read. Please re-enter it in Settings." },
+          { status: 500 }
+        );
+      }
+    }
+  } else {
+    apiKey = platformKey as string;
   }
 
   const genAI = new GoogleGenerativeAI(apiKey);

@@ -54,19 +54,29 @@ export default async function DashboardPage() {
   // key AND some uploaded material — but nothing on screen said so, so the
   // Generate button just refused to work with no explanation of what was
   // missing. This checklist makes the remaining setup explicit.
-  const [{ data: settingsRow }, { count: contentCount }] = await Promise.all([
+  const [{ data: settingsRow }, { count: contentCount }, { data: orgRow }] = await Promise.all([
     supabase.from("organization_settings").select("gemini_api_key").maybeSingle(),
     supabase.from("content_uploads").select("id", { count: "exact", head: true }),
+    supabase.from("organizations").select("plan").maybeSingle(),
   ]);
 
+  // Paid plans include AI, so there's no key for them to add — showing that
+  // step would be telling a paying customer to do work they already paid to
+  // avoid.
+  const aiIncluded = (orgRow?.plan ?? "free") !== "free";
+
   const setupSteps = [
-    {
-      label: "Add your free Gemini API key",
-      done: Boolean(settingsRow?.gemini_api_key),
-      href: "/dashboard/settings",
-      cta: "Add key",
-      why: "Quizo uses your own free Google Gemini key to write questions.",
-    },
+    ...(aiIncluded
+      ? []
+      : [
+          {
+            label: "Add your free Gemini API key",
+            done: Boolean(settingsRow?.gemini_api_key),
+            href: "/dashboard/settings",
+            cta: "Add key",
+            why: "On the Free plan, Quizo uses your own free Google Gemini key to write questions.",
+          },
+        ]),
     {
       label: "Create your first course",
       done: (courseCount ?? 0) > 0,

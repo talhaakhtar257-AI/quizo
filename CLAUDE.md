@@ -28,7 +28,7 @@ I am **not a developer**. English is not my first language.
 
 **Business model:** Free / Pro $19 / Institution $49 per month.
 
-**Cost rule:** the platform must cost me **nothing to run**. Free tiers only — no paid API, no paid hosting. If something needs payment, propose a free alternative and tell me the trade-off. (Taking payment from customers is a separate thing and is out of scope for now.)
+**Cost rule:** a **Free-plan academy must cost me nothing** — they bring their own Google Gemini key, and hosting stays on free tiers. **Paid academies (Pro $19 / Institution $49) include AI**: they use the platform's Gemini key, funded out of their subscription, because telling a non-technical tutor to go create a Google API key before anything works was the biggest reason people signed up and never came back. Every other service stays on a free tier. If something new needs payment, propose a free alternative and tell me the trade-off. (Collecting the subscription itself still isn't built — see Known limits.)
 
 ---
 
@@ -39,7 +39,7 @@ I am **not a developer**. English is not my first language.
 | Framework | Next.js 16 (App Router) + TypeScript strict |
 | Styling | Tailwind CSS v4 |
 | Database + Auth | Supabase (PostgreSQL + RLS) |
-| AI | Google Gemini `gemini-3.6-flash` — **BYOK**, each academy uses their own free key |
+| AI | Google Gemini `gemini-3.6-flash` — **included on paid plans** (platform key, `PLATFORM_GEMINI_API_KEY`); **BYOK on Free**. An academy's own key, if set, always wins on any plan. |
 | Validation | zod |
 | Email | Resend |
 | Charts | Recharts |
