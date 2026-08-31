@@ -52,6 +52,10 @@ export async function proxy(request: NextRequest) {
     .eq("id", user.id)
     .maybeSingle();
 
+  // No profile row at all (e.g. a platform-owner-only account, gated
+  // separately above and never needing one) is NOT the same as a real
+  // deactivation — only an existing profile with is_active = false is that.
+  const hasNoProfile = !profile;
   const isActive = profile?.is_active === true;
   const isAdminOrSubAdmin = profile?.role === "admin" || profile?.role === "sub_admin";
   const isStudent = profile?.role === "student";
@@ -63,6 +67,12 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(
       new URL(isAdminOrSubAdmin ? "/dashboard" : "/student", request.url)
     );
+  }
+
+  // A profile-less account has no academy area to enter — send it to the
+  // public site instead of treating the missing row as a deactivation.
+  if ((isDashboardRoute || isStudentRoute || isSharedRoute) && hasNoProfile) {
+    return NextResponse.redirect(new URL("/", request.url));
   }
 
   // A deactivated account (profiles.is_active = false) reaches neither area,

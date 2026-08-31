@@ -53,7 +53,17 @@ function LoginForm() {
       .eq("id", data.user.id)
       .maybeSingle();
 
-    if (!profile || !profile.is_active) {
+    // No profile row at all is NOT the same as deactivated — it means this
+    // login has no academy membership (e.g. a platform-owner-only account,
+    // gated separately by an env allowlist and never needing a profile).
+    // Only a real profile with is_active = false is an actual deactivation.
+    if (!profile) {
+      router.push("/");
+      router.refresh();
+      return;
+    }
+
+    if (!profile.is_active) {
       await supabase.auth.signOut();
       setLoading(false);
       setError("This account has been deactivated. Contact your academy admin.");
