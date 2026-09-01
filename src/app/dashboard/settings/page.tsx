@@ -151,11 +151,20 @@ export default async function SettingsPage() {
         {limits && (
           <div className="mt-4 space-y-4">
             <UsageBar icon={BookOpen} label="Courses" used={courseCount ?? 0} limit={limits.max_courses} />
+            {/* This counts students across the whole academy, so it can't be
+                compared against a PER-COURSE limit — it used to be, which made
+                the bar read as "18 / 25" against a number it had nothing to do
+                with. Shown as a plain total, with the real per-course cap
+                stated alongside it. */}
             <UsageBar
               icon={Users}
-              label="Students (total across courses)"
+              label={`Students (all courses) — limit is ${
+                limits.max_students_per_course === -1
+                  ? "unlimited"
+                  : `${limits.max_students_per_course} per course`
+              }`}
               used={studentCount ?? 0}
-              limit={limits.max_students_per_course}
+              limit={-1}
             />
             <UsageBar
               icon={Sparkles}

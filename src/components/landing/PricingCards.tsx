@@ -51,8 +51,10 @@ const plans: Plan[] = [
       "CSV export",
       'Remove "Powered by Quizo"',
     ],
+    // No ?plan= param: the signup page never read it, so it was a promise the
+    // URL couldn't keep. Plans are set after signup (there's no checkout yet).
     cta: "Start Pro →",
-    href: "/signup?plan=pro",
+    href: "/signup",
     highlighted: true,
   },
   {
@@ -71,8 +73,10 @@ const plans: Plan[] = [
       "Priority support (24hr)",
       "API access (coming soon)",
     ],
-    cta: "Contact Us",
-    href: "/signup?plan=institution",
+    // Was labelled "Contact Us" but went to the signup form, which isn't
+    // contacting anyone. Honest label until there's a real contact route.
+    cta: "Get started →",
+    href: "/signup",
   },
 ];
 

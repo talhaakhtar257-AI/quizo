@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getPermissionFlags } from "@/lib/permissions";
-import { Card } from "@/components/ui";
+import { Download } from "lucide-react";
+import { Card, buttonVariants } from "@/components/ui";
 import type { Difficulty } from "@/lib/quiz-engine";
 import { DashboardFilters } from "./charts/DashboardFilters";
 import { AttemptsPerDayChart } from "./charts/AttemptsPerDayChart";
@@ -64,13 +65,39 @@ export default async function AdminReportsPage({
   const selectedQuizTitle = pQuiz ? (quizzesList ?? []).find((q) => q.id === pQuiz)?.title ?? null : null;
   const pf = passFail?.[0] ?? { passed_count: 0, failed_count: 0 };
 
+  const { data: orgRow } = await supabase.from("organizations").select("plan").maybeSingle();
+  const { data: planRow } = await supabase
+    .from("plan_limits")
+    .select("has_csv_export")
+    .eq("plan", orgRow?.plan ?? "free")
+    .single();
+  const csvEnabled = Boolean(planRow?.has_csv_export);
+
   return (
     <div className="space-y-6 p-6 sm:p-8">
-      <div>
-        <h1 className="text-3xl font-bold text-fg">Reports</h1>
-        <p className="mt-1 text-sm text-fg-secondary">
-          Score trends, weak questions, and student performance for the selected range.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-fg">Reports</h1>
+          <p className="mt-1 text-sm text-fg-secondary">
+            Score trends, weak questions, and student performance for the selected range.
+          </p>
+        </div>
+        {csvEnabled ? (
+          <a
+            href={`/dashboard/reports/export?from=${from}&to=${to}&course=${course}&quiz=${quiz}`}
+            className={buttonVariants({ variant: "secondary", size: "sm" })}
+          >
+            <Download className="size-4" aria-hidden="true" />
+            Export CSV
+          </a>
+        ) : (
+          <span
+            className="text-xs text-fg-muted"
+            title="CSV export is included on Pro and Institution"
+          >
+            CSV export is a Pro feature
+          </span>
+        )}
       </div>
 
       <DashboardFilters

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { requireAdmin } from "@/lib/require-admin";
 import { requirePermission } from "@/lib/permissions";
+import { planLimitError } from "@/lib/plan-limits";
 
 // Enrollment approval is per-COURSE, not a global account gate — a student
 // can be pending in one course and approved in another at the same time.
@@ -44,17 +45,65 @@ async function loadEnrollment(
 ) {
   const { data, error } = await supabase
     .from("enrollments")
-    .select("id, student_id, profiles!enrollments_student_id_fkey(full_name, email), courses(name)")
+    .select(
+      "id, student_id, course_id, profiles!enrollments_student_id_fkey(full_name, email), courses(name)"
+    )
     .eq("id", enrollmentId)
     .single();
   if (error || !data) throw new Error("Enrollment not found.");
   return data;
 }
 
+// docs/FEATURES.md §11 lists "Student enrolls → COUNT enrollments vs
+// max_students_per_course" as an enforcement point, but nothing ever
+// implemented it: the plan's cap was only stamped onto courses.max_students
+// at creation time, so approvals could run past it indefinitely. Checked here
+// against the CURRENT plan, so upgrading an academy actually raises its cap
+// instead of leaving old courses stuck at the limit they were created with.
+async function assertCourseHasRoom(
+  supabase: Awaited<ReturnType<typeof requireAdmin>>,
+  courseId: string
+) {
+  const { data: course } = await supabase
+    .from("courses")
+    .select("organization_id")
+    .eq("id", courseId)
+    .single();
+  if (!course) return;
+
+  const { data: org } = await supabase
+    .from("organizations")
+    .select("plan")
+    .eq("id", course.organization_id)
+    .single();
+  const { data: limits } = await supabase
+    .from("plan_limits")
+    .select("max_students_per_course")
+    .eq("plan", org?.plan ?? "free")
+    .single();
+
+  const cap = limits?.max_students_per_course ?? 25;
+  if (cap === -1) return;
+
+  const { count } = await supabase
+    .from("enrollments")
+    .select("id", { count: "exact", head: true })
+    .eq("course_id", courseId)
+    .eq("status", "approved");
+
+  if ((count ?? 0) >= cap) {
+    throw planLimitError(
+      `This course is full — the ${org?.plan ?? "free"} plan allows ${cap} approved students per course.`
+    );
+  }
+}
+
 export async function approveEnrollment(enrollmentId: string) {
   const { supabase, userId } = await requirePermission("manage_enrollments");
 
   const enrollment = await loadEnrollment(supabase, enrollmentId);
+  await assertCourseHasRoom(supabase, enrollment.course_id);
+
   const { error } = await supabase
     .from("enrollments")
     .update({ status: "approved", approved_by: userId, approved_at: new Date().toISOString() })
@@ -79,8 +128,14 @@ export async function bulkApproveEnrollments(enrollmentIds: string[]) {
 
   const { data: enrollments } = await supabase
     .from("enrollments")
-    .select("id, profiles!enrollments_student_id_fkey(full_name, email), courses(name)")
+    .select("id, course_id, profiles!enrollments_student_id_fkey(full_name, email), courses(name)")
     .in("id", enrollmentIds);
+
+  // Same per-course cap as the single approve path — otherwise bulk approve
+  // would be a trivial way around it.
+  for (const courseId of new Set((enrollments ?? []).map((row) => row.course_id))) {
+    await assertCourseHasRoom(supabase, courseId);
+  }
 
   const { error } = await supabase
     .from("enrollments")
