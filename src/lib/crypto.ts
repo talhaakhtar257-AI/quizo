@@ -28,8 +28,13 @@ export function encrypt(plaintext: string): string {
 }
 
 export function decrypt(stored: string): string {
-  const [ivHex, authTagHex, ciphertextHex] = stored.split(":");
-  if (!ivHex || !authTagHex || !ciphertextHex) {
+  // Split into exactly three parts and check the two fixed-length ones. The
+  // ciphertext part is deliberately NOT checked for emptiness: encrypting an
+  // empty string legitimately produces an empty ciphertext, and a truthiness
+  // check there would reject a value this same function had just produced.
+  const parts = stored.split(":");
+  const [ivHex, authTagHex, ciphertextHex] = parts;
+  if (parts.length !== 3 || ivHex.length !== 24 || authTagHex.length !== 32) {
     throw new Error("Stored value is not in the expected iv:authTag:ciphertext shape.");
   }
   const decipher = createDecipheriv("aes-256-gcm", getKey(), Buffer.from(ivHex, "hex"));

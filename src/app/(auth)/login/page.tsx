@@ -108,7 +108,7 @@ function LoginForm() {
         <div className="flex justify-end">
           <Link
             href="/forgot-password"
-            className="text-sm font-medium text-primary hover:underline"
+            className="text-sm font-medium text-secondary hover:underline"
           >
             Forgot password?
           </Link>
@@ -121,11 +121,11 @@ function LoginForm() {
 
       <p className="mt-6 text-center text-sm text-fg-secondary">
         Don&apos;t have an account?{" "}
-        <Link href="/signup" className="font-medium text-primary hover:underline">
+        <Link href="/signup" className="font-medium text-secondary hover:underline">
           Create your academy
         </Link>{" "}
         or{" "}
-        <Link href="/signup/student" className="font-medium text-primary hover:underline">
+        <Link href="/signup/student" className="font-medium text-secondary hover:underline">
           join with an invite code
         </Link>
       </p>

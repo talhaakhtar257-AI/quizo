@@ -25,7 +25,7 @@ export default async function NewQuestionPage(
       <div>
         <Link
           href={`/dashboard/quizzes/${quiz.id}/questions`}
-          className="text-sm font-medium text-primary hover:underline"
+          className="text-sm font-medium text-secondary hover:underline"
         >
           &larr; Back to questions
         </Link>

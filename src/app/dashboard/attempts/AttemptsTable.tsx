@@ -278,7 +278,7 @@ export function AttemptsTable({
                   <TableCell>
                     <Link
                       href={`/dashboard/users/${row.studentId}/attempts`}
-                      className="font-medium text-primary hover:underline"
+                      className="font-medium text-secondary hover:underline"
                     >
                       {row.studentName}
                     </Link>

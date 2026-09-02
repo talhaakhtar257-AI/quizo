@@ -34,15 +34,24 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     //
     // Fixing it here fixes it for all 11 forms at once: a submit button stays
     // disabled until this component has actually mounted on the client.
+    //
+    // The guard applies ONLY to a button explicitly marked type="submit".
+    // An untyped <button> inside a form defaults to submit in HTML, which is
+    // the same hazard — so instead of disabling those too, they are rendered
+    // as an explicit type="button". That removes the hazard outright and,
+    // crucially, keeps every ordinary onClick button (Start Quiz, Next
+    // Question, every modal action) clickable. Treating "no type" as
+    // "submit" made all of those depend on this component mounting, so a
+    // slow or failed hydration anywhere on the page left the whole screen
+    // full of dead, greyed-out buttons.
     const [hydrated, setHydrated] = useState(false);
     useEffect(() => setHydrated(true), []);
-    const isSubmit = type === undefined || type === "submit";
-    const notReady = isSubmit && !hydrated;
+    const notReady = type === "submit" && !hydrated;
 
     return (
       <button
         ref={ref}
-        type={type}
+        type={type ?? "button"}
         disabled={disabled || loading || notReady}
         className={buttonVariants({ variant, size, className })}
         {...props}

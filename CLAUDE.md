@@ -120,8 +120,12 @@ The tables in one line each:
 
 Full tokens: **`docs/DESIGN-SYSTEM.md`**. The short version:
 
-**Brand** — spruce green `#1B4D3E` (primary), gold `#F4A300` (CTAs)
-**Semantic** — success `#16A34A`, error `#DC2626`, warning `#F59E0B`, info `#2563EB`
+**Brand** — spruce green `#1B4D3E` (links and inline accent text), gold `#F4A300` (CTA fills only —
+gold on white is 2.1:1 and must never be used as text)
+**Semantic** — success `#15803D`, error `#DC2626`, warning `#B45309`, info `#2563EB`
+(success and warning are the darker shades: the original `#16A34A` and `#D97706` were only 3.1:1
+and 3.6:1 against white, below the 4.5:1 this same file requires. An axe scan in
+`tests/e2e/accessibility.spec.ts` now fails the build if that slips again.)
 **Font** — Inter
 
 **Rules:**

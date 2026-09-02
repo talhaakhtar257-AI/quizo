@@ -42,12 +42,18 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   }
 
   if (attempt.status !== "in_progress") {
-    return NextResponse.json({ error: "This attempt has already been submitted." }, { status: 409 });
+    // `reason` is what the quiz screen keys off. Without it the browser could
+    // only show the message and leave the student stranded on a question it
+    // will never be allowed to answer.
+    return NextResponse.json(
+      { error: "This attempt has already been submitted.", reason: "already_submitted" },
+      { status: 409 }
+    );
   }
 
   const secondsRemaining = computeSecondsRemaining(quiz.timeLimitMinutes, attempt.startedAt);
   if (secondsRemaining <= 0) {
-    return NextResponse.json({ error: "Time is up." }, { status: 409 });
+    return NextResponse.json({ error: "Time is up.", reason: "time_expired" }, { status: 409 });
   }
 
   const { data: existingAnswer } = await supabase
@@ -110,7 +116,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     .select("id");
 
   if (!updatedRows || updatedRows.length === 0) {
-    return NextResponse.json({ error: "This attempt has already been submitted." }, { status: 409 });
+    return NextResponse.json(
+      { error: "This attempt has already been submitted.", reason: "already_submitted" },
+      { status: 409 }
+    );
   }
 
   // Response-time flag is a Pro/Institution feature (FEATURES.md §7) —

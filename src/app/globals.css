@@ -14,7 +14,9 @@
   --border: #E2E8F0;
   --fg: #0F172A;
   --fg-secondary: #475569;
-  --fg-muted: #94A3B8;
+  /* slate-500, not slate-400: #94A3B8 on white is 2.6:1, below the 4.5:1
+     this project requires of itself. Caption and label text uses this. */
+  --fg-muted: #64748B;
 
   /* Brand — gold is the CTA/primary-action color, spruce is the secondary
      brand color (nav, secondary buttons, outline/ghost text, links).
@@ -32,9 +34,9 @@
   --secondary-foreground: #FFFFFF;
 
   /* Semantic */
-  --success: #16A34A;
+  --success: #15803D; /* green-700 — #16A34A was 3.1:1 on white */
   --success-bg: #DCFCE7;
-  --warning: #D97706;
+  --warning: #B45309; /* amber-700 — #D97706 was 3.6:1 on white */
   --warning-bg: #FEF3C7;
   --danger: #DC2626;
   --danger-bg: #FEE2E2;

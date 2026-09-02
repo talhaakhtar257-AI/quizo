@@ -62,7 +62,7 @@ export default async function QuizQuestionsPage(
         <div>
           <Link
             href={`/dashboard/courses/${quiz.course_id}`}
-            className="text-sm font-medium text-primary hover:underline"
+            className="text-sm font-medium text-secondary hover:underline"
           >
             &larr; Back to course
           </Link>

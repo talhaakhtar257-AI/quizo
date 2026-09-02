@@ -110,7 +110,7 @@ export default async function AdminAttemptDetailPage({
           {attempt.quizzes?.title ?? "Deleted quiz"}
         </h1>
         <p className="mt-1 text-sm text-fg-secondary">
-          <Link href={`/dashboard/users/${attempt.student_id}/attempts`} className="text-primary hover:underline">
+          <Link href={`/dashboard/users/${attempt.student_id}/attempts`} className="text-secondary hover:underline">
             {studentName}
           </Link>{" "}
           · {attempt.quizzes?.courses?.name ?? "—"} · Attempt #{attempt.attempt_number}

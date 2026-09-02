@@ -61,7 +61,7 @@ export function WeakQuestionsTable({
               <TableCell className="max-w-md whitespace-normal">
                 <Link
                   href={`/dashboard/quizzes/${row.quizId}/questions`}
-                  className="text-primary hover:underline"
+                  className="text-secondary hover:underline"
                 >
                   {row.questionText}
                 </Link>

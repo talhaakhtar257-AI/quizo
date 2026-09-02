@@ -46,7 +46,7 @@ export function ComparisonTable() {
           <tr className="border-b border-border bg-surface-raised text-left uppercase tracking-wider text-fg-secondary">
             <th className="px-4 py-3 font-medium">Feature</th>
             <th className="px-4 py-3 text-center font-medium">Free</th>
-            <th className="px-4 py-3 text-center font-medium text-primary">Pro</th>
+            <th className="px-4 py-3 text-center font-medium text-secondary">Pro</th>
             <th className="px-4 py-3 text-center font-medium">Institution</th>
           </tr>
         </thead>

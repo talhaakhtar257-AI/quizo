@@ -18,7 +18,7 @@ export function UpgradePrompt({
   return (
     <div className="rounded-lg border border-primary/30 bg-primary-faint p-4">
       <div className="flex items-start gap-3">
-        <Sparkles className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
+        <Sparkles className="mt-0.5 size-5 shrink-0 text-secondary" aria-hidden="true" />
         <div className="flex-1">
           <p className="text-sm font-semibold text-fg">Upgrade to Pro</p>
           <p className="mt-1 text-sm text-fg-secondary">{message}</p>

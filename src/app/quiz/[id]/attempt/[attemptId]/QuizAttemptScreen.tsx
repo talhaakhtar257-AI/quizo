@@ -76,7 +76,7 @@ function TimerBadge({ secondsRemaining, totalSeconds }: { secondsRemaining: numb
       className={cn(
         "font-mono tabular-nums",
         tone === "quiet" && "text-sm font-medium text-fg-secondary",
-        tone === "primary" && "text-sm font-semibold text-primary",
+        tone === "primary" && "text-sm font-semibold text-secondary",
         tone === "warning" && "text-base font-bold text-warning",
         tone === "danger" && "text-lg font-bold text-danger"
       )}
@@ -345,9 +345,29 @@ export function QuizAttemptScreen({
       return;
     }
     if (result.json.error) {
+      setConnectionState("ok");
+
+      // The attempt is over — the timer ran out while they were reading, or
+      // another tab already submitted it. The server will not accept this
+      // answer and never will, so leaving the student on the question screen
+      // with a red toast stranded them there for good. Ask for the next
+      // question instead: that call finalizes an expired attempt and returns
+      // "done", which takes them to their result.
+      const reason = result.json.reason;
+      if (reason === "time_expired" || reason === "already_submitted") {
+        showToast(
+          reason === "time_expired"
+            ? "Time is up. Submitting your quiz."
+            : "This quiz was already submitted. Taking you to your result.",
+          "warning"
+        );
+        setPhase("finishing");
+        await loadNextQuestion();
+        return;
+      }
+
       // Previously swallowed in silence: the student tapped Next, the spinner
       // blipped, and nothing happened with no explanation anywhere.
-      setConnectionState("ok");
       setPhase("question");
       showToast(
         typeof result.json.error === "string"

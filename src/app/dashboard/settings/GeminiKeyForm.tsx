@@ -68,7 +68,7 @@ export function GeminiKeyForm({
             href="https://aistudio.google.com/apikey"
             target="_blank"
             rel="noopener noreferrer"
-            className="font-medium text-primary hover:underline"
+            className="font-medium text-secondary hover:underline"
           >
             Get a free key from Google AI Studio ↗
           </a>

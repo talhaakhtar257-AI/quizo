@@ -57,7 +57,7 @@ export function QuizzesTabs({ entries }: { entries: QuizEntry[] }) {
             onClick={() => setTab(item.key)}
             className={`-mb-px border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
               tab === item.key
-                ? "border-primary text-primary"
+                ? "border-primary text-secondary"
                 : "border-transparent text-fg-secondary hover:text-fg"
             }`}
           >

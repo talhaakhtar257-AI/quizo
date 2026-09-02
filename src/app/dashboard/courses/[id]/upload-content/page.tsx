@@ -32,7 +32,7 @@ export default async function UploadContentPage(
       <div>
         <Link
           href={`/dashboard/courses/${id}`}
-          className="text-sm font-medium text-primary hover:underline"
+          className="text-sm font-medium text-secondary hover:underline"
         >
           &larr; {course.name}
         </Link>

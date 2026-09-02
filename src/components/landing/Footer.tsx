@@ -41,7 +41,7 @@ export function Footer() {
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <Link href="/" className="flex items-center gap-1.5 text-lg font-bold text-white">
-            <Sparkles className="size-5 text-primary" aria-hidden="true" />
+            <Sparkles className="size-5 text-secondary" aria-hidden="true" />
             Quizo
           </Link>
           <p className="mt-3 text-sm">AI-powered quiz platform for academies</p>

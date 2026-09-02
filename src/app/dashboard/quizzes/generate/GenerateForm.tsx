@@ -298,7 +298,7 @@ export function GenerateForm({
               <div key={level.key} className="flex items-center justify-between gap-3 text-sm">
                 <span className="text-fg">{level.label}</span>
                 {result.status === "pending" && <span className="text-fg-muted">Waiting...</span>}
-                {result.status === "running" && <span className="text-primary">Generating...</span>}
+                {result.status === "running" && <span className="text-secondary">Generating...</span>}
                 {result.status === "done" && !isShort && (
                   <span className="flex items-center gap-1 text-success">
                     <CheckCircle2 className="size-4" /> {result.count} created

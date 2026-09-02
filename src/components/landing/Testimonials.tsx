@@ -35,7 +35,7 @@ export function Testimonials() {
         <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-3">
           {testimonials.map((t) => (
             <Card key={t.name}>
-              <div className="flex gap-0.5 text-primary" aria-hidden="true">
+              <div className="flex gap-0.5 text-secondary" aria-hidden="true">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Star key={i} className="size-4 fill-current" />
                 ))}

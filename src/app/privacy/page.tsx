@@ -119,7 +119,7 @@ export default function PrivacyPage() {
             <h2>Contact</h2>
             <p>
               Questions about this policy? Contact us at{" "}
-              <a href="mailto:privacy@example.com" className="text-primary hover:underline">
+              <a href="mailto:privacy@example.com" className="text-secondary underline">
                 privacy@example.com
               </a>
               .

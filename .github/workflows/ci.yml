@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Nothing here costs money: GitHub Actions is free for public repositories
+# and has a generous free allowance for private ones, and every tool used is
+# a dev dependency that never ships to Vercel.
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      # The unit tests need none of these. The RLS integration tests and the
+      # browser journeys skip themselves when the Supabase secrets are not
+      # configured, so a fork's pull request still gets a useful run.
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Types
+        run: npm run typecheck
+
+      # Reported, not enforced: the linter already had 28 pre-existing errors
+      # before CI existed, and gating on them from day one would just mean a
+      # permanently red build that everyone learns to ignore. Clear the
+      # backlog, then delete this line.
+      - name: Lint
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Unit and integration tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Install the browser Playwright needs
+        run: npx playwright install --with-deps chromium
+
+      - name: Browser journeys
+        run: npm run test:e2e
+
+      - name: Keep the report from a failed run
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

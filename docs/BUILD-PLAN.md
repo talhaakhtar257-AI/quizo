@@ -781,6 +781,37 @@ Talha's own control panel, separate from every academy's dashboard.
 
 ---
 
+## Phase R — Automated safety net ✅
+
+Full detail in **`docs/TESTING.md`**. In short: `npm test` runs 74 unit and database-security
+tests in about twenty seconds, `npm run test:e2e` drives a real browser through the whole student
+journey, and GitHub Actions runs all of it plus the types, the linter and the build on every push.
+
+The database tests are the important ones. They create two throwaway academies against the real
+Supabase project, sign in as real users, and ask the database directly for what those users must
+not have — another academy's courses, students or API key; a student promoting themselves, forging
+a score or approving their own enrollment; an owner upgrading their own plan. This project had
+already been bitten twice by policies that scoped correctly to the organization but forgot to check
+the role, and nothing in the repository would have caught a third.
+
+**Real defects these tests found, all fixed:**
+
+1. **Every button without an explicit `type` was disabled until the page's JavaScript finished
+   loading.** The Phase I hydration guard treated "no type" as "submit", which swept in Start Quiz,
+   Next Question and every modal action. Now untyped buttons render as `type="button"` — the hazard
+   is removed rather than guarded against — and only a real submit button waits.
+2. **A student whose time ran out while reading a question was stranded.** The server correctly
+   refused the answer; the browser showed a red toast and left them on that question with no route
+   to their result. `submit-answer` now returns a machine-readable `reason`, and the quiz screen
+   finalizes and moves them to the result page.
+3. **Three colours failed the 4.5:1 contrast rule this project sets for itself** — `--fg-muted`,
+   `--success` and `--warning` — and gold `#F4A300`, a 2.1:1 fill colour, was being used for link
+   text in 42 places. Links are spruce now, which is what `docs/DESIGN-SYSTEM.md` said all along.
+   Inline links inside paragraphs are underlined, since spruce alone was only 1.27:1 away from the
+   body text around it.
+
+---
+
 ## Known limits — real, not bugs
 
 Same three as `CLAUDE.md`: Resend only reaches Talha's own address until a domain is bought;

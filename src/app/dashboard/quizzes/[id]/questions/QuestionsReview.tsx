@@ -451,7 +451,7 @@ function TabGroup<T extends string>({
           onClick={() => onChange(option.value)}
           className={
             value === option.value
-              ? "rounded-md bg-primary-subtle px-3 py-1.5 text-sm font-medium text-primary"
+              ? "rounded-md bg-primary-subtle px-3 py-1.5 text-sm font-medium text-secondary"
               : "rounded-md px-3 py-1.5 text-sm font-medium text-fg-secondary hover:text-fg"
           }
         >

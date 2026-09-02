@@ -159,13 +159,13 @@ function StudentSignupForm() {
 
       <p className="mt-6 text-center text-sm text-fg-secondary">
         Running an academy instead?{" "}
-        <Link href="/signup" className="font-medium text-primary hover:underline">
+        <Link href="/signup" className="font-medium text-secondary hover:underline">
           Create your academy
         </Link>
       </p>
       <p className="mt-2 text-center text-sm text-fg-secondary">
         Already have an account?{" "}
-        <Link href="/login" className="font-medium text-primary hover:underline">
+        <Link href="/login" className="font-medium text-secondary hover:underline">
           Log in
         </Link>
       </p>

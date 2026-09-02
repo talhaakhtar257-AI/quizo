@@ -14,7 +14,7 @@ export const metadata: Metadata = { title: "Settings" };
 
 const PLAN_BADGE_STYLES: Record<string, string> = {
   free: "bg-surface-raised text-fg-secondary",
-  pro: "bg-primary-subtle text-primary-hover border border-primary/30",
+  pro: "bg-primary-subtle text-secondary border border-primary/30",
   institution: "bg-secondary-faint text-secondary border border-secondary/30",
 };
 

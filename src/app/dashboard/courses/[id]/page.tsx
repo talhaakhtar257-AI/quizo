@@ -73,7 +73,7 @@ export default async function CourseDetailPage(
           {(pendingCount ?? 0) > 0 && (
             <Link
               href={`/dashboard/users?course=${course.id}`}
-              className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+              className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-secondary hover:underline"
             >
               <Users className="size-4" />
               {pendingCount} pending approval

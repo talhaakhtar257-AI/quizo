@@ -140,7 +140,7 @@ export function CoursesTable({ rows }: { rows: CourseRow[] }) {
               <TableCell>
                 <Link
                   href={`/dashboard/courses/${row.id}`}
-                  className="font-medium text-primary hover:underline"
+                  className="font-medium text-secondary hover:underline"
                 >
                   {row.name}
                 </Link>

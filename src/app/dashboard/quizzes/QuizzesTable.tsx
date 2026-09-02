@@ -183,7 +183,7 @@ export function QuizzesTable({ rows, courses }: { rows: QuizRow[]; courses: Cour
               <TableCell>
                 <Link
                   href={`/dashboard/quizzes/${row.id}/settings`}
-                  className="font-medium text-primary hover:underline"
+                  className="font-medium text-secondary hover:underline"
                 >
                   {row.title}
                 </Link>

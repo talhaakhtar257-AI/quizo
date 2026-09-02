@@ -25,7 +25,7 @@
 ### Accent Colors (CTA & Highlights)
 | Token | Hex | Usage |
 |-------|-----|-------|
-| `--gold-500` | `#F4A300` | **Primary CTA buttons**, important badges |
+| `--gold-500` | `#F4A300` | **Primary CTA buttons**, important badges. Fill only — never text on a light surface (2.1:1) |
 | `--gold-600` | `#D48E00` | CTA hover state |
 | `--gold-400` | `#FFBA33` | Star ratings, highlights |
 | `--gold-100` | `#FFF3D6` | Warning backgrounds |
@@ -33,11 +33,11 @@
 ### Semantic Colors
 | Token | Hex | Usage |
 |-------|-----|-------|
-| `--success` | `#16A34A` | Correct answers, pass status, approval |
+| `--success` | `#15803D` | Correct answers, pass status, approval |
 | `--success-light` | `#DCFCE7` | Success backgrounds |
 | `--error` | `#DC2626` | Wrong answers, fail status, rejection |
 | `--error-light` | `#FEE2E2` | Error backgrounds |
-| `--warning` | `#F59E0B` | Warnings, expiring items |
+| `--warning` | `#B45309` | Warnings, expiring items |
 | `--warning-light` | `#FEF3C7` | Warning backgrounds |
 | `--info` | `#2563EB` | Info badges, links |
 | `--info-light` | `#DBEAFE` | Info backgrounds |
@@ -64,6 +64,17 @@
 | Body text `--neutral-950` | `#FAFAFA` |
 | Secondary text `--neutral-600` | `#A3A3A3` |
 | Primary `--spruce-700` | `--spruce-400` (lighter for contrast) |
+
+### Contrast rule — enforced, not aspirational
+
+Every colour used for **text** must reach 4.5:1 against the surface behind it. Three tokens failed
+this and were corrected once an automated axe scan was added: `--fg-muted` (was `#94A3B8`, 2.6:1),
+`--success` (was `#16A34A`, 3.1:1) and `--warning` (was `#D97706`, 3.6:1). Gold `#F4A300` fails
+badly at 2.1:1 and is now a **fill-only** colour — links and inline accent text use spruce, which
+is what this document said all along while the code used gold.
+
+`tests/e2e/accessibility.spec.ts` scans every public page and fails on any serious or critical
+violation, so this cannot drift back unnoticed.
 
 ---
 

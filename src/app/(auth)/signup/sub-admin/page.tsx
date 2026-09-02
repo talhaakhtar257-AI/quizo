@@ -126,7 +126,7 @@ function SubAdminSignupForm() {
 
       <p className="mt-6 text-center text-sm text-fg-secondary">
         Already have an account?{" "}
-        <Link href="/login" className="font-medium text-primary hover:underline">
+        <Link href="/login" className="font-medium text-secondary hover:underline">
           Log in
         </Link>
       </p>

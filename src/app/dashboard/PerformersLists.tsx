@@ -20,7 +20,7 @@ function StudentRow({ student, rank }: { student: StudentPerformanceRow; rank: n
       className="flex items-center justify-between gap-3 rounded-md px-3 py-2 hover:bg-surface-raised"
     >
       <div className="flex items-center gap-3">
-        <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary-subtle text-xs font-semibold text-primary">
+        <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary-subtle text-xs font-semibold text-secondary">
           {rank}
         </span>
         <div>

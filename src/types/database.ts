@@ -1196,6 +1196,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      // Test-only: tears down a throwaway academy created by the
+      // automated RLS tests. Refuses any organization whose name does not
+      // start with the test prefix, and is callable only by service_role.
+      delete_test_organization: {
+        Args: {
+          p_org_id: string
+        }
+        Returns: undefined
+      }
       current_org: { Args: never; Returns: string }
       dashboard_attempts_per_day: {
         Args: {

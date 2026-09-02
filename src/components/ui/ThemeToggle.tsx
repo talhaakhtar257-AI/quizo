@@ -45,7 +45,7 @@ export function ThemeToggle() {
           className={cn(
             "flex size-11 items-center justify-center rounded-md text-fg-muted transition-colors",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-            theme === value && "bg-primary-subtle text-primary"
+            theme === value && "bg-primary-subtle text-secondary"
           )}
         >
           <Icon className="size-4" />

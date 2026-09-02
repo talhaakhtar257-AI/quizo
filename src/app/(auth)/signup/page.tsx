@@ -124,13 +124,13 @@ export default function SignupPage() {
 
       <p className="mt-6 text-center text-sm text-fg-secondary">
         Joining as a student instead?{" "}
-        <Link href="/signup/student" className="font-medium text-primary hover:underline">
+        <Link href="/signup/student" className="font-medium text-secondary hover:underline">
           Use your invite code
         </Link>
       </p>
       <p className="mt-2 text-center text-sm text-fg-secondary">
         Already have an account?{" "}
-        <Link href="/login" className="font-medium text-primary hover:underline">
+        <Link href="/login" className="font-medium text-secondary hover:underline">
           Log in
         </Link>
       </p>

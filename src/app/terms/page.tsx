@@ -68,7 +68,7 @@ export default function TermsPage() {
             <h2>Plans, billing, and suspension</h2>
             <p>
               Free plan limits and paid plan pricing are shown on our{" "}
-              <a href="/pricing" className="text-primary hover:underline">
+              <a href="/pricing" className="text-secondary underline">
                 pricing page
               </a>
               . We can suspend an academy&apos;s access for violating these terms, non-payment on a
@@ -109,7 +109,7 @@ export default function TermsPage() {
             <h2>Contact</h2>
             <p>
               Questions about these terms? Contact us at{" "}
-              <a href="mailto:support@example.com" className="text-primary hover:underline">
+              <a href="mailto:support@example.com" className="text-secondary underline">
                 support@example.com
               </a>
               .

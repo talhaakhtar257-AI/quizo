@@ -42,7 +42,7 @@ export function HowItWorks() {
               <div className="mx-auto flex size-20 items-center justify-center rounded-full border border-border bg-surface">
                 <step.icon className="size-8 text-secondary" aria-hidden="true" />
               </div>
-              <div className="mt-4 text-sm font-bold text-primary">{step.number}</div>
+              <div className="mt-4 text-sm font-bold text-secondary">{step.number}</div>
               <h3 className="mt-1 text-lg font-semibold text-fg">{step.title}</h3>
               <p className="mt-2 text-sm text-fg-secondary">{step.description}</p>
             </div>

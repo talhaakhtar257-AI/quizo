@@ -78,7 +78,7 @@ export function UsersTable({
             onClick={() => setTab(item.key)}
             className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
               tab === item.key
-                ? "border-primary text-primary"
+                ? "border-primary text-secondary"
                 : "border-transparent text-fg-secondary hover:text-fg"
             }`}
           >
