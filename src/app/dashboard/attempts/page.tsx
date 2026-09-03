@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { AttemptsTable, type AttemptRow } from "./AttemptsTable";
+import { LoadFailed } from "@/components/ui";
 
 export const metadata: Metadata = { title: "Attempts" };
 
 export default async function AdminAttemptsPage() {
   const supabase = await createClient();
 
-  const [{ data: attempts }, { data: quizzes }, { data: students }] = await Promise.all([
+  const [{ data: attempts, error }, { data: quizzes }, { data: students }] = await Promise.all([
     supabase
       .from("quiz_attempts")
       .select(
@@ -49,15 +50,19 @@ export default async function AdminAttemptsPage() {
         </p>
       </div>
 
-      <AttemptsTable
-        rows={rows}
-        quizzes={quizzes ?? []}
-        students={(students ?? []).map((student) => ({
-          id: student.id,
-          name: student.full_name ?? student.email ?? "Unknown",
-        }))}
-        initialNow={new Date().toISOString()}
-      />
+      {error ? (
+        <LoadFailed what="quiz attempts" />
+      ) : (
+        <AttemptsTable
+          rows={rows}
+          quizzes={quizzes ?? []}
+          students={(students ?? []).map((student) => ({
+            id: student.id,
+            name: student.full_name ?? student.email ?? "Unknown",
+          }))}
+          initialNow={new Date().toISOString()}
+        />
+      )}
     </div>
   );
 }

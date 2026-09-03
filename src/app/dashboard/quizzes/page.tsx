@@ -4,13 +4,13 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Quizzes" };
-import { buttonVariants } from "@/components/ui";
+import { buttonVariants, LoadFailed} from "@/components/ui";
 import { QuizzesTable, type QuizRow } from "./QuizzesTable";
 
 export default async function QuizzesPage() {
   const supabase = await createClient();
 
-  const { data: quizzes } = await supabase
+  const { data: quizzes, error } = await supabase
     .from("quizzes")
     .select(
       "id, title, course_id, time_limit_minutes, passing_score, questions_to_show, difficulty_mode, max_attempts, status, created_at, courses(name)"
@@ -82,7 +82,11 @@ export default async function QuizzesPage() {
         </div>
       </div>
 
-      <QuizzesTable rows={rows} courses={courses ?? []} />
+      {error ? (
+        <LoadFailed what="your quizzes" />
+      ) : (
+        <QuizzesTable rows={rows} courses={courses ?? []} />
+      )}
     </div>
   );
 }

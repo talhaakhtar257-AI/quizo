@@ -63,7 +63,7 @@
 | Borders `--neutral-200` | `#404040` |
 | Body text `--neutral-950` | `#FAFAFA` |
 | Secondary text `--neutral-600` | `#A3A3A3` |
-| Primary `--spruce-700` | `--spruce-400` (lighter for contrast) |
+| Primary `--spruce-700` | `#6FCFAC` (lighter for contrast — see the contrast rule below) |
 
 ### Contrast rule — enforced, not aspirational
 
@@ -73,8 +73,15 @@ this and were corrected once an automated axe scan was added: `--fg-muted` (was 
 badly at 2.1:1 and is now a **fill-only** colour — links and inline accent text use spruce, which
 is what this document said all along while the code used gold.
 
-`tests/e2e/accessibility.spec.ts` scans every public page and fails on any serious or critical
-violation, so this cannot drift back unnoticed.
+The same rule applies **in dark mode**, and it must be measured against the *lightest* dark surface
+a token is used on — `--surface-raised` `#334155`, not the page background. Nobody had ever checked
+this, and two more tokens failed once the scan was extended: dark `--fg-muted` (was `#94A3B8`,
+4.03:1 on raised surfaces, now `#A8B4C6`) and dark `--secondary` (was `#4AAE8A`, between 3.5:1 and
+4.4:1 as text on the raised surfaces it is actually used on, now `#6FCFAC`).
+
+`tests/e2e/accessibility.spec.ts` scans every public page, and
+`tests/e2e/signed-in-accessibility.spec.ts` scans every admin and student page **in both themes**.
+Both fail on any serious or critical violation, so this cannot drift back unnoticed.
 
 ---
 

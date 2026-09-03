@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getPermissionFlags } from "@/lib/permissions";
+import { LoadFailed } from "@/components/ui";
 import {
   UsersTable,
   type PendingEnrollmentRow,
@@ -23,7 +24,7 @@ export default async function StudentsPage() {
 
   const supabase = await createClient();
 
-  const { data: enrollments } = await supabase
+  const { data: enrollments, error } = await supabase
     .from("enrollments")
     .select(
       "id, status, created_at, approved_at, rejected_reason, profiles!enrollments_student_id_fkey(full_name, email), courses(name)"
@@ -84,7 +85,11 @@ export default async function StudentsPage() {
         </p>
       </div>
 
-      <UsersTable pending={pending} approved={approved} rejected={rejected} />
+      {error ? (
+        <LoadFailed what="your students" />
+      ) : (
+        <UsersTable pending={pending} approved={approved} rejected={rejected} />
+      )}
     </div>
   );
 }

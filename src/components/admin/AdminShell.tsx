@@ -127,7 +127,11 @@ export function AdminShell({
         </nav>
       </aside>
 
-      <div className="flex min-h-full flex-1 flex-col">
+      {/* min-w-0 is load-bearing: without it this flex item keeps its
+          content's minimum width, so a wide table stretches the whole
+          column past the screen and the entire page slides sideways on a
+          phone. The table has its own overflow-x box; this lets it work. */}
+      <div className="flex min-h-full min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b border-border bg-surface px-4 sm:px-6">
           <button
             type="button"

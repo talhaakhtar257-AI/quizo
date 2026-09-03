@@ -15,8 +15,13 @@ export default defineConfig({
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? "github" : "list",
-  timeout: 60_000,
-  expect: { timeout: 10_000 },
+  // Generous, deliberately. These tests run against the real Supabase free
+  // tier, which is also the live database — it is not fast, and it gets
+  // slower the more of the suite has already run. A page that takes 40
+  // seconds to answer is a database under load, not a broken product, and a
+  // suite that cries wolf about it is a suite people stop believing.
+  timeout: 120_000,
+  expect: { timeout: 25_000 },
   use: {
     baseURL: `http://127.0.0.1:${PORT}`,
     trace: "retain-on-failure",

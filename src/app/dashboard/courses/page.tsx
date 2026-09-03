@@ -4,12 +4,12 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Courses" };
-import { buttonVariants } from "@/components/ui";
+import { buttonVariants, LoadFailed} from "@/components/ui";
 import { CoursesTable, type CourseRow } from "./CoursesTable";
 
 export default async function CoursesPage() {
   const supabase = await createClient();
-  const { data: courses } = await supabase
+  const { data: courses, error } = await supabase
     .from("courses")
     .select(
       "id, name, invite_code, invite_code_expires_at, max_students, created_at, quizzes(count), enrollments(count)"
@@ -43,7 +43,7 @@ export default async function CoursesPage() {
         )}
       </div>
 
-      <CoursesTable rows={rows} />
+      {error ? <LoadFailed what="your courses" /> : <CoursesTable rows={rows} />}
     </div>
   );
 }

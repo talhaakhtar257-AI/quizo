@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/get-current-user";
 import { createServiceClient } from "@/lib/supabase/service";
 import { checkEligibility, initialDifficulty, getHasFullAntiCheat } from "@/lib/quiz-engine";
+import { logServerError } from "@/lib/log";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id: quizId } = await params;
@@ -54,6 +55,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     .single();
 
   if (error || !inserted) {
+    logServerError("quiz-start.insert", error, { studentId: currentUser.id });
     return NextResponse.json({ error: "Could not start the quiz. Please try again." }, { status: 500 });
   }
 

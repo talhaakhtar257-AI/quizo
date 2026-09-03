@@ -14,13 +14,14 @@ import {
   TableHeaderCell,
   TableRow,
   buttonVariants,
+  LoadFailed,
 } from "@/components/ui";
 import { formatDate } from "@/lib/format";
 
 export default async function HistoryPage() {
   const supabase = await createClient();
 
-  const { data: attempts } = await supabase
+  const { data: attempts, error } = await supabase
     .from("quiz_attempts")
     .select("id, quiz_id, status, score, submitted_at, quizzes(title, passing_score, courses(name))")
     .neq("status", "in_progress")
@@ -41,7 +42,9 @@ export default async function HistoryPage() {
         <p className="mt-1 text-sm text-fg-secondary">Every quiz attempt you've made.</p>
       </div>
 
-      {!attempts || attempts.length === 0 ? (
+      {error ? (
+        <LoadFailed what="your quiz history" />
+      ) : !attempts || attempts.length === 0 ? (
         <EmptyState
           icon={<HistoryIcon className="size-10" />}
           title="No attempts yet"

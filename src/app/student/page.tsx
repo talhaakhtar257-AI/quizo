@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Award, CheckCircle2, ClipboardList, Clock, Download, TrendingUp, XCircle } from "lucide-react";
 import { getCurrentUser } from "@/lib/get-current-user";
 import { createClient } from "@/lib/supabase/server";
-import { Badge, Card, EmptyState, buttonVariants } from "@/components/ui";
+import { Badge, Card, EmptyState, LoadFailed, buttonVariants } from "@/components/ui";
 import { formatDate } from "@/lib/format";
 import { QuizCard } from "@/components/user/QuizCard";
 import { ProgressChart } from "@/components/user/ProgressChart";
@@ -20,7 +20,7 @@ export default async function DashboardPage() {
 
   // RLS already limits this to published quizzes in courses the student is
   // an approved enrollment in.
-  const { data: quizzes } = await supabase
+  const { data: quizzes, error: quizzesError } = await supabase
     .from("quizzes")
     .select(
       "id, title, time_limit_minutes, passing_score, questions_to_show, difficulty_mode, max_attempts, courses(name)"
@@ -167,7 +167,9 @@ export default async function DashboardPage() {
 
       <section className="space-y-4">
         <h2 className="text-lg font-semibold text-fg">Quizzes To Take</h2>
-        {!quizzes || quizzes.length === 0 ? (
+        {quizzesError ? (
+          <LoadFailed what="your quizzes" />
+        ) : !quizzes || quizzes.length === 0 ? (
           <EmptyState
             icon={<ClipboardList className="size-10" />}
             title="No quizzes available yet"

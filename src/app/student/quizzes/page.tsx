@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import type { AttemptSummary } from "@/lib/quiz-status";
 import { QuizzesTabs, type QuizEntry } from "./QuizzesTabs";
+import { LoadFailed } from "@/components/ui";
 
 export const metadata: Metadata = { title: "My Quizzes" };
 
@@ -10,7 +11,7 @@ export default async function MyQuizzesPage() {
 
   // RLS already limits this to published quizzes in courses the student is
   // an approved enrollment in — no separate "assignment" step exists.
-  const { data: quizzes } = await supabase
+  const { data: quizzes, error } = await supabase
     .from("quizzes")
     .select(
       "id, title, time_limit_minutes, passing_score, questions_to_show, difficulty_mode, max_attempts, courses(name)"
@@ -54,7 +55,7 @@ export default async function MyQuizzesPage() {
         <p className="mt-1 text-sm text-fg-secondary">Every quiz available to you.</p>
       </div>
 
-      <QuizzesTabs entries={entries} />
+      {error ? <LoadFailed what="your quizzes" /> : <QuizzesTabs entries={entries} />}
     </div>
   );
 }

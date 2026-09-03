@@ -817,3 +817,53 @@ the role, and nothing in the repository would have caught a third.
 Same three as `CLAUDE.md`: Resend only reaches Talha's own address until a domain is bought;
 Vercel functions die at 60s so generation must stay chunked; Supabase free tier pauses after 7
 days idle — check before every demo.
+
+## Phase S — Systematic sweep ✅
+
+The safety net in Phase R proved the rules the project already knew about. This phase went looking
+for the ones nobody had checked. Everything found is fixed and covered by a test that would catch it
+coming back. Full operational notes are in **`docs/OPERATIONS.md`**.
+
+**Security and privacy**
+
+- **Certificate numbers were guessable.** Five random digits meant the whole year's certificates,
+  across every academy, could be listed by trying `QZ-<year>-00000` upward — each one a public page
+  showing a student's full name, score, course and academy. They are now ten characters drawn from
+  the cryptographic random source. This also removed a collision problem: five digits started
+  colliding with the UNIQUE constraint after a few hundred certificates, and a student whose three
+  insert attempts all collided received no certificate and no error.
+- **Invite codes came from `Math.random()`.** An invite code lets a stranger join an academy, so it
+  is a key and now comes from the same cryptographic source, with even distribution across the
+  alphabet.
+- **Uploaded material could give the AI orders.** Content goes straight into the generation prompt.
+  Its triple-quote fence is now neutralised so material cannot close its own quotes, and the prompt
+  states outright that anything inside the fence is study material even when phrased as a command.
+
+**Honesty about failure**
+
+- **Every list page treated "the database said no" as "you have nothing yet."** A Supabase query
+  that fails returns null, and the code did `data ?? []`. An owner whose free-tier database had
+  been paused was told "No courses yet. Create your first course." Seven pages now show a distinct
+  `LoadFailed` state instead.
+- **Nothing was logged when anything failed.** Six server-side failure points now write one
+  `[quizo]` line to Vercel's Runtime Logs, with ids but never answers, emails or keys.
+- **A root-layout crash showed Next.js's unstyled error page.** `global-error.tsx` now covers it.
+
+**Resilience**
+
+- Gemini calls are capped at 45 seconds and a retry only starts with real time left, so a slow AI
+  returns a plain-English message instead of being killed by Vercel's 60-second ceiling.
+
+**Accessibility and phones**
+
+- Dark-mode muted text and dark-mode spruce both failed the project's own 4.5:1 contrast rule on
+  raised surfaces. Both tokens were corrected.
+- Two quiz filter dropdowns had no accessible name.
+- `/dashboard/courses` scrolled sideways on a 375px screen: the admin shell's content column was
+  missing `min-w-0`, so a wide table stretched the whole page instead of scrolling inside its own
+  box.
+
+**Checked and found correct** — every plan limit is enforced where it is claimed; every pricing
+bullet maps to code that exists; RLS on `certificates` allows only the owner and their academy's
+admins, with the public verification page deliberately using the service client; the quiz screen
+already retries a dropped connection and the server already owns the clock.

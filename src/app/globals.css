@@ -86,22 +86,30 @@
   --border: #334155;
   --fg: #F1F5F9;
   --fg-secondary: #CBD5E1;
-  --fg-muted: #94A3B8;
+  /* Muted text has to clear 4.5:1 against the LIGHTEST dark surface, not
+     just the page background. On --surface-raised (#334155 — used by
+     inactive tabs, table headers and chips) slate-400 #94A3B8 was only
+     4.03:1. This is 4.9:1 there and better still on the darker surfaces. */
+  --fg-muted: #A8B4C6;
 
   /* Gold already reads clearly on a dark surface — kept as-is, hover goes
-     brighter instead of darker for correct dark-mode feedback direction.
-     Spruce is swapped for its lighter tint (spruce-400) per
-     docs/DESIGN-SYSTEM.md's dark-mode mapping table — the dark base tone
-     has too little contrast against a dark background to read as text,
-     a border, or a solid button fill. */
+     brighter instead of darker for correct dark-mode feedback direction. */
   --primary: #F4A300;
   --primary-hover: #FFBA33;
   --primary-subtle: color-mix(in srgb, var(--primary) 22%, var(--surface));
   --primary-faint: color-mix(in srgb, var(--primary) 12%, var(--surface));
   --primary-foreground: #0A1F17;
 
-  --secondary: #4AAE8A;
-  --secondary-hover: #7DCDB0;
+  /* Spruce is swapped for a lighter tint per docs/DESIGN-SYSTEM.md's
+     dark-mode mapping table — the dark base tone has too little contrast
+     against a dark background to read as text, a border, or a button fill.
+     Spruce-400 #4AAE8A reads fine on the page background but fell to
+     3.5-4.4:1 as text on the raised surfaces it actually gets used on:
+     inactive tabs (#334155), the gold-subtle plan badge (#4D442E) and its
+     own faint tint (#233944). This shade clears 4.5:1 on all three, and
+     still takes the near-black --secondary-foreground as a button fill. */
+  --secondary: #6FCFAC;
+  --secondary-hover: #9BE0C6;
   --secondary-subtle: color-mix(in srgb, var(--secondary) 22%, var(--surface));
   --secondary-faint: color-mix(in srgb, var(--secondary) 12%, var(--surface));
   --secondary-foreground: #0A1F17;

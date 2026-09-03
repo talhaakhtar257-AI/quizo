@@ -64,6 +64,24 @@ build:
 - Accessibility: every public page is scanned with axe for serious and critical violations, and the
   first Tab press must land somewhere with a visible focus ring.
 
+**Signed-in accessibility** (`tests/e2e/signed-in-accessibility.spec.ts`) — the pages people
+actually spend the day in: seven admin pages and three student pages, each scanned **twice, once in
+each theme**. The dark colours had never been checked by anyone, and three of them turned out to
+fail the project's own 4.5:1 rule.
+
+**Phone screens** (`tests/e2e/responsive.spec.ts`) — every page is loaded at 375px wide and must not
+scroll sideways. A wide table is allowed to scroll inside its own box; the page itself is not. The
+quiz screen is also checked for 44px-tall answer buttons, because that is where a mis-tap costs a
+student a mark.
+
+**The AI prompt** (`tests/unit/prompt.test.ts`) — uploaded material is untrusted text that goes
+straight into the prompt. These check it cannot break out of its quotes and issue its own
+instructions, and that a malformed answer from Gemini is rejected rather than turned into a
+broken question.
+
+**Codes that act as keys** (`tests/unit/random-code.test.ts`) — invite codes and certificate numbers
+must be unguessable, evenly spread, and free of the characters people misread.
+
 ## What is deliberately not tested
 
 - **Billing** — there is no payment system yet, so there is nothing to test.
@@ -79,3 +97,11 @@ the browser journeys on every push and pull request. For the database and browse
 there, these repository secrets must exist: `NEXT_PUBLIC_SUPABASE_URL`,
 `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ENCRYPTION_KEY`. Without them those
 tests skip themselves and the rest still runs.
+
+## A note on speed
+
+The browser tests run against the real Supabase free tier, which is also the live database. It is
+not fast, and it gets slower as the suite goes on. The waits in `playwright.config.ts` are
+deliberately generous for that reason — a page that takes forty seconds to answer means a database
+under load, not a broken product. If the whole suite starts failing on timeouts, check the Supabase
+dashboard before looking at the code.

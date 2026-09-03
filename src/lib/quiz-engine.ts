@@ -1,4 +1,6 @@
 import { createServiceClient } from "@/lib/supabase/service";
+import { randomCode } from "./random-code";
+import { logServerError } from "./log";
 
 export type Difficulty = "easy" | "medium" | "hard";
 export type DifficultyMode = "adaptive" | "easy_only" | "medium_only" | "hard_only";
@@ -92,11 +94,18 @@ export function computeSecondsRemaining(timeLimitMinutes: number | null, started
   return Math.max(0, totalSeconds - elapsedSeconds);
 }
 
+// The certificate number is the ONLY thing standing between the public
+// /verify page and a certificate's contents — the student's full name, their
+// score, their course and their academy. Five random digits meant the entire
+// year's certificates, across every academy on the platform, could be listed
+// by trying QZ-<year>-00000 through QZ-<year>-99999. Ten characters from a
+// 31-character alphabet, drawn from the cryptographic random source, makes
+// that impossible, and also removes the collision problem: five digits
+// started colliding with the UNIQUE constraint after only a few hundred
+// certificates, and a student whose three insert attempts all collided
+// silently received no certificate at all.
 function generateCertificateNumber(): string {
-  const digits = Math.floor(Math.random() * 100000)
-    .toString()
-    .padStart(5, "0");
-  return `QZ-${new Date().getFullYear()}-${digits}`;
+  return `QZ-${new Date().getFullYear()}-${randomCode(10)}`;
 }
 
 export interface FinalizedAttempt {
@@ -261,6 +270,15 @@ export async function finalizeAttempt(
           .select("id")
           .single();
         if (!error && inserted) certificateId = inserted.id;
+        else if (tries === 2) {
+          // Rule 16 says a passing student is certified automatically. If
+          // that failed three times, the student sees a pass with no
+          // certificate and nobody would ever know why.
+          logServerError("certificate.issue", error, {
+            attemptId,
+            organizationId: attempt.organization_id,
+          });
+        }
       }
     }
   }

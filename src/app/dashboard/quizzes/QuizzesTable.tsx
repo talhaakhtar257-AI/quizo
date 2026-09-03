@@ -139,6 +139,7 @@ export function QuizzesTable({ rows, courses }: { rows: QuizRow[]; courses: Cour
           />
         </div>
         <select
+          aria-label="Filter quizzes by course"
           value={courseFilter}
           onChange={(event) => setCourseFilter(event.target.value)}
           className="h-11 rounded-md border border-border bg-surface px-3 text-sm text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
@@ -151,6 +152,7 @@ export function QuizzesTable({ rows, courses }: { rows: QuizRow[]; courses: Cour
           ))}
         </select>
         <select
+          aria-label="Filter quizzes by status"
           value={statusFilter}
           onChange={(event) => setStatusFilter(event.target.value as "all" | QuizStatus)}
           className="h-11 rounded-md border border-border bg-surface px-3 text-sm text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"

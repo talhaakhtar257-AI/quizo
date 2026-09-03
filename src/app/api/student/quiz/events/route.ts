@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { loadAttemptContext } from "@/lib/quiz-engine";
 import type { CheatEventType } from "@/lib/anti-cheat";
 import type { Json } from "@/types/database";
+import { logServerError } from "@/lib/log";
 
 interface IncomingEvent {
   type?: string;
@@ -75,6 +76,7 @@ export async function POST(request: Request) {
 
   const { error } = await supabase.from("quiz_event_stream").insert(rows);
   if (error) {
+    logServerError("quiz-events.insert", error, { rows: rows.length });
     return NextResponse.json({ error: "Could not log events." }, { status: 500 });
   }
 

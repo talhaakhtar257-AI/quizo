@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/get-current-user";
 import { createServiceClient } from "@/lib/supabase/service";
 import { loadAttemptContext, computeSecondsRemaining, nextDifficulty, OPTION_KEYS } from "@/lib/quiz-engine";
+import { logServerError } from "@/lib/log";
 
 interface RequestBody {
   attempt_id?: string;
@@ -97,6 +98,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (insertError.code === "23505") {
       return NextResponse.json({ error: "This question has already been answered." }, { status: 409 });
     }
+    logServerError("submit-answer.insert", insertError, { attemptId, questionId });
     return NextResponse.json({ error: "Could not save your answer. Please try again." }, { status: 500 });
   }
 

@@ -9,6 +9,7 @@ export * from "./Modal";
 export * from "./Toast";
 export * from "./Table";
 export * from "./EmptyState";
+export * from "./LoadFailed";
 export * from "./UpgradePrompt";
 export * from "./LoadingSpinner";
 export * from "./Skeleton";

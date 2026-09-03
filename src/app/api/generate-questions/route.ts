@@ -3,11 +3,18 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { requirePermission } from "@/lib/permissions";
 import { decrypt } from "@/lib/crypto";
 import { GEMINI_MODEL } from "@/lib/gemini";
+import { logServerError } from "@/lib/log";
 import { buildPrompt, parseGeneratedQuestions, type Difficulty } from "./prompt";
 
 // 100 questions in one Gemini call can take close to a minute — give this
 // route the maximum duration Vercel's free tier allows.
 export const maxDuration = 60;
+
+// One Gemini call gets 45 of those 60 seconds, leaving room to save the
+// questions and answer. A retry is only started while under 25 seconds have
+// gone, so the second attempt can also finish inside the ceiling.
+const ATTEMPT_TIMEOUT_MS = 45_000;
+const RETRY_CUTOFF_MS = 25_000;
 
 interface RequestBody {
   contentId?: string;
@@ -17,6 +24,7 @@ interface RequestBody {
 }
 
 export async function POST(request: Request) {
+  const startedAt = Date.now();
   let supabase: Awaited<ReturnType<typeof requirePermission>>["supabase"];
   let organizationId: string;
   try {
@@ -159,10 +167,18 @@ export async function POST(request: Request) {
   }
 
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({
-    model: GEMINI_MODEL,
-    generationConfig: { responseMimeType: "application/json" },
-  });
+  const model = genAI.getGenerativeModel(
+    {
+      model: GEMINI_MODEL,
+      generationConfig: { responseMimeType: "application/json" },
+    },
+    // Vercel's free tier kills this function dead at 60 seconds with a
+    // platform error page — no friendly message, no saved questions, no clue
+    // what went wrong. Capping each Gemini call below that ceiling means a
+    // slow or unreachable AI service comes back as our own plain-English
+    // error instead, with time to spare for writing the response.
+    { timeout: ATTEMPT_TIMEOUT_MS }
+  );
 
   const prompt = buildPrompt(contentText, difficulty, questionCount);
 
@@ -171,8 +187,11 @@ export async function POST(request: Request) {
 
   // Try once, retry once more if it fails (bad JSON, network, etc.) or if
   // Gemini returned fewer questions than asked for. Keep whichever attempt
-  // produced the most questions.
+  // produced the most questions. The retry only happens if there is real
+  // time left in the budget — a second attempt that gets guillotined at 60s
+  // throws away a usable first answer.
   for (let attempt = 0; attempt < 2; attempt++) {
+    if (attempt > 0 && Date.now() - startedAt > RETRY_CUTOFF_MS) break;
     try {
       const result = await model.generateContent(prompt);
       const parsed = parseGeneratedQuestions(result.response.text());
@@ -184,6 +203,14 @@ export async function POST(request: Request) {
   }
 
   if (!generated) {
+    logServerError("generate-questions.gemini", lastError, {
+      organizationId,
+      plan,
+      difficulty,
+      questionCount,
+      usingPlatformKey: !settings?.gemini_api_key,
+      elapsedMs: Date.now() - startedAt,
+    });
     return NextResponse.json({ error: describeGeminiError(lastError) }, { status: 502 });
   }
 
@@ -214,6 +241,11 @@ export async function POST(request: Request) {
     .select("id");
 
   if (insertError || !insertedQuestions) {
+    logServerError("generate-questions.save", insertError, {
+      organizationId,
+      poolId,
+      rows: rows.length,
+    });
     return NextResponse.json(
       { error: "Questions were generated but could not be saved. Please try again." },
       { status: 500 }

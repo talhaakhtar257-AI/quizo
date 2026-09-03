@@ -42,11 +42,17 @@ export function DashboardFilters({
 
   const quizOptions = course === "all" ? quizzes : quizzes.filter((q) => q.courseId === course);
 
+  // Each label is tied to its control with htmlFor/id. Sitting next to a
+  // field is not the same as labelling it — a screen reader announced all
+  // four of these as unnamed.
   return (
     <div className="flex flex-wrap items-end gap-3">
       <div className="space-y-1">
-        <label className="text-xs font-medium text-fg-secondary">From</label>
+        <label htmlFor="report-from" className="text-xs font-medium text-fg-secondary">
+          From
+        </label>
         <input
+          id="report-from"
           type="date"
           value={from}
           onChange={(event) => navigate({ from: event.target.value })}
@@ -55,8 +61,11 @@ export function DashboardFilters({
       </div>
 
       <div className="space-y-1">
-        <label className="text-xs font-medium text-fg-secondary">To</label>
+        <label htmlFor="report-to" className="text-xs font-medium text-fg-secondary">
+          To
+        </label>
         <input
+          id="report-to"
           type="date"
           value={to}
           onChange={(event) => navigate({ to: event.target.value })}
@@ -65,8 +74,11 @@ export function DashboardFilters({
       </div>
 
       <div className="space-y-1">
-        <label className="text-xs font-medium text-fg-secondary">Course</label>
+        <label htmlFor="report-course" className="text-xs font-medium text-fg-secondary">
+          Course
+        </label>
         <select
+          id="report-course"
           value={course}
           onChange={(event) => navigate({ course: event.target.value, quiz: "all" })}
           className="h-11 rounded-md border border-border bg-surface px-3 text-sm text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
@@ -81,8 +93,11 @@ export function DashboardFilters({
       </div>
 
       <div className="space-y-1">
-        <label className="text-xs font-medium text-fg-secondary">Quiz</label>
+        <label htmlFor="report-quiz" className="text-xs font-medium text-fg-secondary">
+          Quiz
+        </label>
         <select
+          id="report-quiz"
           value={quiz}
           onChange={(event) => navigate({ quiz: event.target.value })}
           className="h-11 rounded-md border border-border bg-surface px-3 text-sm text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"

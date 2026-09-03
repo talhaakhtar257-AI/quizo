@@ -125,7 +125,9 @@ gold on white is 2.1:1 and must never be used as text)
 **Semantic** — success `#15803D`, error `#DC2626`, warning `#B45309`, info `#2563EB`
 (success and warning are the darker shades: the original `#16A34A` and `#D97706` were only 3.1:1
 and 3.6:1 against white, below the 4.5:1 this same file requires. An axe scan in
-`tests/e2e/accessibility.spec.ts` now fails the build if that slips again.)
+`tests/e2e/accessibility.spec.ts` now fails the build if that slips again, and
+`signed-in-accessibility.spec.ts` scans every dashboard and student page **in both themes** —
+dark-mode contrast must be measured against `--surface-raised`, not the page background.)
 **Font** — Inter
 
 **Rules:**
